@@ -2,10 +2,12 @@
 import { computed } from 'vue'
 import type { Node } from '@/api/types'
 import { ago, bytes, CYCLES, expiresIn, money, osName, pair, percent, rate, trafficUsed, uptime } from '@/lib/format'
+import type { Probe } from '@/api/ping'
+import PingRows from './PingRows.vue'
 import PixelBar from './PixelBar.vue'
 import PixelIcon from './PixelIcon.vue'
 
-const props = defineProps<{ node: Node, showPrice: boolean }>()
+const props = defineProps<{ node: Node, showPrice: boolean, probes?: Probe[] }>()
 
 const m = computed(() => (props.node.online ? props.node.metrics : null))
 const cpu = computed(() => m.value?.cpu ?? 0)
@@ -45,6 +47,8 @@ const days = computed(() => expiresIn(props.node))
         <span><PixelIcon name="down" :size="12" class="rx" />{{ rate(m.net_rx) }}</span>
         <span><PixelIcon name="up" :size="12" class="tx" />{{ rate(m.net_tx) }}</span>
       </div>
+
+      <PingRows v-if="probes?.length" :probes="probes" class="pings" />
     </template>
     <div v-else class="offline display">
       <span>OFFLINE</span>
@@ -144,6 +148,12 @@ h3 {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+
+.pings {
+  margin-top: -4px;
+  padding-bottom: 4px;
+  border-bottom: 2px dashed var(--track);
 }
 
 .rx {

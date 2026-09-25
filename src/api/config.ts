@@ -11,6 +11,8 @@ export type SiteConfig = {
   showSummary: boolean
   showPrice: boolean
   hideOffline: boolean
+  showPing: boolean
+  pingProbes: number
   defaultRange: '1' | '6' | '24' | '168'
 }
 

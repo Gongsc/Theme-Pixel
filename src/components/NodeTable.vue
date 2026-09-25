@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { latencyColor, type Probe } from '@/api/ping'
 import type { Node } from '@/api/types'
 import { ago, bytes, expiresIn, percent, rate, trafficUsed, uptime } from '@/lib/format'
 import PixelBar from './PixelBar.vue'
 
-defineProps<{ nodes: Node[] }>()
+defineProps<{ nodes: Node[], pings?: Map<number, Probe[]> }>()
 const router = useRouter()
 
 const live = (n: Node) => (n.online ? n.metrics : null)
@@ -20,6 +21,7 @@ const live = (n: Node) => (n.online ? n.metrics : null)
           <th>RAM</th>
           <th>DISK</th>
           <th>↓ / ↑</th>
+          <th v-if="pings">PING</th>
           <th>MONTH</th>
           <th>UPTIME</th>
         </tr>
@@ -38,7 +40,14 @@ const live = (n: Node) => (n.online ? n.metrics : null)
             <td><div class="cell"><PixelBar :value="percent(live(n)!.disk_used, n.disk_total)" :cells="8" /><span class="num">{{ percent(live(n)!.disk_used, n.disk_total).toFixed(0) }}%</span></div></td>
             <td class="num">{{ rate(live(n)!.net_rx) }} / {{ rate(live(n)!.net_tx) }}</td>
           </template>
-          <td v-else colspan="4" class="gone">OFFLINE · {{ ago(n.last_seen) }}</td>
+          <td v-if="pings && live(n)" class="lat num">
+            <span
+              v-for="p in (pings.get(n.id) ?? []).slice(0, 4)" :key="p.id"
+              :title="`${p.name} · 丢包 ${Math.round(p.loss)}%`" :style="{ color: latencyColor(p.latest) }"
+            >{{ p.latest === null ? '×' : Math.round(p.latest) }}</span>
+            <span v-if="!pings.get(n.id)?.length" class="muted">—</span>
+          </td>
+          <td v-else-if="!live(n)" :colspan="pings ? 5 : 4" class="gone">OFFLINE · {{ ago(n.last_seen) }}</td>
           <td class="num">{{ bytes(trafficUsed(n)) }}<span v-if="n.traffic_limit > 0" class="muted"> / {{ bytes(n.traffic_limit) }}</span></td>
           <td class="num">{{ live(n) ? uptime(live(n)!.uptime) : '—' }}</td>
         </tr>
@@ -113,6 +122,11 @@ tr.off {
 
 .gone {
   color: var(--red);
+}
+
+.lat span + span::before {
+  content: ' / ';
+  color: var(--muted);
 }
 
 .badge.dead {

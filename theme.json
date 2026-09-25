@@ -6,38 +6,127 @@
   "author": "Gongsc",
   "url": "https://github.com/Gongsc/Theme-Pixel",
   "config": [
-    { "type": "title", "label": "基础" },
     {
-      "key": "defaultTheme", "type": "select", "label": "默认配色", "default": "system",
+      "type": "title",
+      "label": "基础"
+    },
+    {
+      "key": "defaultTheme",
+      "type": "select",
+      "label": "默认配色",
+      "default": "system",
       "help": "访客未手动切换时使用的配色",
       "options": [
-        { "value": "system", "label": "跟随系统" },
-        { "value": "light", "label": "亮色" },
-        { "value": "dark", "label": "暗色" }
+        {
+          "value": "system",
+          "label": "跟随系统"
+        },
+        {
+          "value": "light",
+          "label": "亮色"
+        },
+        {
+          "value": "dark",
+          "label": "暗色"
+        }
       ]
     },
     {
-      "key": "cardLayout", "type": "select", "label": "默认布局", "default": "grid",
+      "key": "cardLayout",
+      "type": "select",
+      "label": "默认布局",
+      "default": "grid",
       "help": "访客可在首页自行切换",
       "options": [
-        { "value": "grid", "label": "卡片" },
-        { "value": "list", "label": "列表" }
+        {
+          "value": "grid",
+          "label": "卡片"
+        },
+        {
+          "value": "list",
+          "label": "列表"
+        }
       ]
     },
-    { "key": "pixelFont", "type": "boolean", "label": "中文像素字体", "default": true, "help": "使用缝合像素字体（Fusion Pixel）显示中文，关闭则使用系统字体" },
-    { "type": "title", "label": "首页" },
-    { "key": "notice", "type": "text", "label": "公告", "default": "", "help": "显示在首页顶部，纯文本" },
-    { "key": "showSummary", "type": "boolean", "label": "显示概览", "default": true },
-    { "key": "showPrice", "type": "boolean", "label": "显示价格", "default": false, "help": "在节点卡片上显示价格与付费周期" },
-    { "key": "hideOffline", "type": "boolean", "label": "隐藏离线节点", "default": false },
-    { "type": "title", "label": "详情" },
     {
-      "key": "defaultRange", "type": "select", "label": "默认时间范围", "default": "1",
+      "key": "pixelFont",
+      "type": "boolean",
+      "label": "中文像素字体",
+      "default": true,
+      "help": "使用缝合像素字体（Fusion Pixel）显示中文，关闭则使用系统字体"
+    },
+    {
+      "type": "title",
+      "label": "首页"
+    },
+    {
+      "key": "notice",
+      "type": "text",
+      "label": "公告",
+      "default": "",
+      "help": "显示在首页顶部，纯文本"
+    },
+    {
+      "key": "showSummary",
+      "type": "boolean",
+      "label": "显示概览",
+      "default": true
+    },
+    {
+      "key": "showPrice",
+      "type": "boolean",
+      "label": "显示价格",
+      "default": false,
+      "help": "在节点卡片上显示价格与付费周期"
+    },
+    {
+      "key": "hideOffline",
+      "type": "boolean",
+      "label": "隐藏离线节点",
+      "default": false
+    },
+    {
+      "key": "showPing",
+      "type": "boolean",
+      "label": "显示延迟",
+      "default": true,
+      "help": "在节点卡片与列表中显示探测线路的最新延迟和丢包；每分钟为每个在线节点请求一次近 1 小时的延迟记录"
+    },
+    {
+      "key": "pingProbes",
+      "type": "number",
+      "label": "卡片延迟线路数",
+      "default": 3,
+      "min": 1,
+      "max": 6,
+      "help": "每张节点卡片最多显示的探测线路数量"
+    },
+    {
+      "type": "title",
+      "label": "详情"
+    },
+    {
+      "key": "defaultRange",
+      "type": "select",
+      "label": "默认时间范围",
+      "default": "1",
       "options": [
-        { "value": "1", "label": "1 小时" },
-        { "value": "6", "label": "6 小时" },
-        { "value": "24", "label": "24 小时" },
-        { "value": "168", "label": "7 天" }
+        {
+          "value": "1",
+          "label": "1 小时"
+        },
+        {
+          "value": "6",
+          "label": "6 小时"
+        },
+        {
+          "value": "24",
+          "label": "24 小时"
+        },
+        {
+          "value": "168",
+          "label": "7 天"
+        }
       ]
     }
   ]
