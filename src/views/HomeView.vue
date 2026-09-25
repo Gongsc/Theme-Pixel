@@ -11,7 +11,7 @@ const layout = ref<'grid' | 'list' | null>(null)
 import { computed, watch } from 'vue'
 import { config } from '@/api/config'
 import { nodes, nodesError } from '@/api/nodes'
-import { pings, usePings } from '@/api/ping'
+import { pickProbes, pings, usePings, type Probe } from '@/api/ping'
 import GroupTabs from '@/components/GroupTabs.vue'
 import NodeCard from '@/components/NodeCard.vue'
 import NodeTable from '@/components/NodeTable.vue'
@@ -46,7 +46,12 @@ const shown = computed(() => {
 const view = computed(() => layout.value ?? config.value.cardLayout)
 
 usePings()
-const probesOf = (id: number) => config.value.showPing ? pings.value.get(id)?.slice(0, config.value.pingProbes) : undefined
+/** Each node's routes as the settings select them; undefined while latency is off. */
+const shownPings = computed(() => {
+  if (!config.value.showPing) return undefined
+  const { pingNames, pingProbes } = config.value
+  return new Map<number, Probe[]>([...pings.value].map(([id, probes]) => [id, pickProbes(probes, pingNames, pingProbes)]))
+})
 </script>
 
 <template>
@@ -75,9 +80,9 @@ const probesOf = (id: number) => config.value.showPing ? pings.value.get(id)?.sl
       <p v-if="!all.length" class="empty display">NO NODES YET</p>
       <p v-else-if="!shown.length" class="empty">没有匹配的节点</p>
       <div v-else-if="view === 'grid'" class="grid">
-        <NodeCard v-for="n in shown" :key="n.id" :node="n" :show-price="config.showPrice" :probes="probesOf(n.id)" />
+        <NodeCard v-for="n in shown" :key="n.id" :node="n" :show-price="config.showPrice" :probes="shownPings?.get(n.id)" />
       </div>
-      <NodeTable v-else :nodes="shown" :pings="config.showPing ? pings : undefined" />
+      <NodeTable v-else :nodes="shown" :pings="shownPings" />
     </template>
 
     <div v-else class="grid">

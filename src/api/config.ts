@@ -13,6 +13,7 @@ export type SiteConfig = {
   hideOffline: boolean
   showPing: boolean
   pingProbes: number
+  pingNames: string
   defaultRange: '1' | '6' | '24' | '168'
 }
 

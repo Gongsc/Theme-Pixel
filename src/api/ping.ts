@@ -89,6 +89,17 @@ export function usePings() {
   })
 }
 
+/**
+ * The routes to show: those named in the setting, in its order, else the
+ * first `limit`. Names match without regard to case or surrounding spaces;
+ * either comma works, since the setting is typed with a Chinese keyboard.
+ */
+export function pickProbes(probes: Probe[], names: string, limit: number): Probe[] {
+  const wanted = names.split(/[,，]/).map(s => s.trim().toLowerCase()).filter(Boolean)
+  if (!wanted.length) return probes.slice(0, limit)
+  return wanted.flatMap(w => probes.filter(p => p.name.trim().toLowerCase() === w))
+}
+
 /** Latency tiers shared by every latency readout. */
 export function latencyColor(ms: number | null): string {
   if (ms === null) return 'var(--red)'

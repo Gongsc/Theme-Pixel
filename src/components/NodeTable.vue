@@ -42,7 +42,7 @@ const live = (n: Node) => (n.online ? n.metrics : null)
           </template>
           <td v-if="pings && live(n)" class="lat num">
             <span
-              v-for="p in (pings.get(n.id) ?? []).slice(0, 4)" :key="p.id"
+              v-for="p in pings.get(n.id) ?? []" :key="p.id"
               :title="`${p.name} · 丢包 ${Math.round(p.loss)}%`" :style="{ color: latencyColor(p.latest) }"
             >{{ p.latest === null ? '×' : Math.round(p.latest) }}</span>
             <span v-if="!pings.get(n.id)?.length" class="muted">—</span>
