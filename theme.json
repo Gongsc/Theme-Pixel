@@ -1,0 +1,44 @@
+{
+  "name": "Pixel · 像素",
+  "short": "pixel",
+  "description": "8-bit 复古像素风的极简探针主题，黑框硬阴影、方块进度条与像素字体。",
+  "version": "1.0.0",
+  "author": "Gongsc",
+  "url": "https://github.com/Gongsc/Theme-Pixel",
+  "config": [
+    { "type": "title", "label": "基础" },
+    {
+      "key": "defaultTheme", "type": "select", "label": "默认配色", "default": "system",
+      "help": "访客未手动切换时使用的配色",
+      "options": [
+        { "value": "system", "label": "跟随系统" },
+        { "value": "light", "label": "亮色" },
+        { "value": "dark", "label": "暗色" }
+      ]
+    },
+    {
+      "key": "cardLayout", "type": "select", "label": "默认布局", "default": "grid",
+      "help": "访客可在首页自行切换",
+      "options": [
+        { "value": "grid", "label": "卡片" },
+        { "value": "list", "label": "列表" }
+      ]
+    },
+    { "key": "pixelFont", "type": "boolean", "label": "中文像素字体", "default": true, "help": "使用缝合像素字体（Fusion Pixel）显示中文，关闭则使用系统字体" },
+    { "type": "title", "label": "首页" },
+    { "key": "notice", "type": "text", "label": "公告", "default": "", "help": "显示在首页顶部，纯文本" },
+    { "key": "showSummary", "type": "boolean", "label": "显示概览", "default": true },
+    { "key": "showPrice", "type": "boolean", "label": "显示价格", "default": false, "help": "在节点卡片上显示价格与付费周期" },
+    { "key": "hideOffline", "type": "boolean", "label": "隐藏离线节点", "default": false },
+    { "type": "title", "label": "详情" },
+    {
+      "key": "defaultRange", "type": "select", "label": "默认时间范围", "default": "1",
+      "options": [
+        { "value": "1", "label": "1 小时" },
+        { "value": "6", "label": "6 小时" },
+        { "value": "24", "label": "24 小时" },
+        { "value": "168", "label": "7 天" }
+      ]
+    }
+  ]
+}
