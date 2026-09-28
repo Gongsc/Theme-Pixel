@@ -59,7 +59,11 @@ export type Node = {
   month_start: string
   day_rx: number
   day_tx: number
-  public_remark?: string
+  /**
+   * The operator's note. The hub sends it to a signed-in administrator only;
+   * anonymous visitors never receive it.
+   */
+  remark?: string
 }
 
 export type Me = { authed: boolean, github: boolean, site_name: string, public_page: boolean }

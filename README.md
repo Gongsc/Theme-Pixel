@@ -50,4 +50,4 @@ npm run package   # 生成 release/theme.tar.gz
 
 ## 许可
 
-MIT。Silkscreen 与 Fusion Pixel 字体均使用 SIL Open Font License 1.1。
+MIT。Silkscreen 与 Fusion Pixel 字体均使用 SIL Open Font License 1.1；国旗来自 [flag-icons](https://github.com/lipis/flag-icons)（MIT）；站点图标来自 [Icons8](https://icons8.com)。

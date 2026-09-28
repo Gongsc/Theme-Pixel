@@ -3,8 +3,10 @@ import { computed } from 'vue'
 import type { Node } from '@/api/types'
 import { ago, bytes, CYCLES, expiresIn, money, osName, pair, percent, rate, trafficUsed, uptime } from '@/lib/format'
 import type { Probe } from '@/api/ping'
+import NodeTags from './NodeTags.vue'
 import PingRows from './PingRows.vue'
 import PixelBar from './PixelBar.vue'
+import PixelFlag from './PixelFlag.vue'
 import PixelIcon from './PixelIcon.vue'
 
 const props = defineProps<{ node: Node, showPrice: boolean, probes?: Probe[] }>()
@@ -22,9 +24,10 @@ const days = computed(() => expiresIn(props.node))
     <header>
       <i class="dot" :class="{ on: node.online }" />
       <h3>{{ node.name }}</h3>
-      <span v-if="node.country" class="badge display">{{ node.country }}</span>
+      <PixelFlag v-if="node.country" :code="node.country" />
     </header>
     <p class="sub muted">{{ [osName(node.os), node.arch, node.virt].filter(Boolean).join(' · ') || '—' }}</p>
+    <NodeTags :remark="node.remark" class="tags" />
 
     <template v-if="m">
       <div class="meter">
@@ -42,13 +45,6 @@ const days = computed(() => expiresIn(props.node))
         <PixelBar :value="disk" />
         <span class="v num">{{ pair(m.disk_used, node.disk_total) }}</span>
       </div>
-
-      <div class="net num">
-        <span><PixelIcon name="down" :size="12" class="rx" />{{ rate(m.net_rx) }}</span>
-        <span><PixelIcon name="up" :size="12" class="tx" />{{ rate(m.net_tx) }}</span>
-      </div>
-
-      <PingRows v-if="probes?.length" :probes="probes" class="pings" />
     </template>
     <div v-else class="offline display">
       <span>OFFLINE</span>
@@ -61,6 +57,15 @@ const days = computed(() => expiresIn(props.node))
       <span class="v num">{{ pair(used, node.traffic_limit) }}</span>
     </div>
     <div v-else class="meta muted num">本月 ↓{{ bytes(node.month_rx) }} ↑{{ bytes(node.month_tx) }}</div>
+
+    <template v-if="m">
+      <div class="net num">
+        <span><PixelIcon name="down" :size="12" class="rx" />{{ rate(m.net_rx) }}</span>
+        <span><PixelIcon name="up" :size="12" class="tx" />{{ rate(m.net_tx) }}</span>
+      </div>
+
+      <PingRows v-if="probes?.length" :probes="probes" class="pings" />
+    </template>
 
     <footer class="muted">
       <span v-if="m">UP {{ uptime(m.uptime) }}</span>
@@ -117,6 +122,10 @@ h3 {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.tags {
+  margin: -2px 0 2px 16px;
 }
 
 .meter {

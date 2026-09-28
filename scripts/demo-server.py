@@ -38,7 +38,7 @@ def node(i, name, country, group, online, expires):
                 traffic_limit=(500 * G) if i % 2 == 0 else 0, traffic_mode='sum', traffic_reset_day=1,
                 total_rx=80 * G, total_tx=40 * G, month_rx=(20 + i * 30) * G, month_tx=(10 + i * 8) * G,
                 month_start='', day_rx=3 * G, day_tx=G,
-                public_remark='演示数据 · 仅用于本地预览' if i == 0 else '')
+                remark=['三网优化;CN2 GIA；年付', 'BGP; 原生IP', '', '大带宽', '', ''][i])
 
 
 def history(hours, points, series):

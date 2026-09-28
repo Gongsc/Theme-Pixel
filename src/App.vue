@@ -51,7 +51,7 @@ watchEffect(() => { document.title = [nodeName.value, siteName.value].filter(Boo
     <header class="top">
       <div class="wrap bar">
         <RouterLink to="/" class="brand">
-          <img src="/favicon.svg" width="24" height="24" alt="">
+          <img src="/logo.png" width="32" height="32" alt="">
           <span>{{ siteName }}</span>
         </RouterLink>
         <span class="live" :title="live ? '实时推送中' : '轮询中'">

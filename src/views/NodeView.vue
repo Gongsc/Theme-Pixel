@@ -4,6 +4,7 @@ import { api } from '@/api/client'
 import { config } from '@/api/config'
 import { nodes } from '@/api/nodes'
 import type { History } from '@/api/types'
+import NodeTags from '@/components/NodeTags.vue'
 import PixelBar from '@/components/PixelBar.vue'
 import PixelChart from '@/components/PixelChart.vue'
 import PixelIcon from '@/components/PixelIcon.vue'
@@ -148,7 +149,7 @@ const facts = computed(() => {
           <span v-if="node.country" class="badge display">{{ node.country }}</span>
           <span v-if="node.group && node.group !== node.country" class="badge">{{ node.group }}</span>
         </div>
-        <p v-if="node.public_remark" class="remark muted">{{ node.public_remark }}</p>
+        <NodeTags :remark="node.remark" class="remark" />
 
         <div class="live">
           <div class="meter">
@@ -289,8 +290,7 @@ h1 {
 }
 
 .remark {
-  margin: -8px 0 0;
-  white-space: pre-wrap;
+  margin-top: -6px;
 }
 
 .live {
