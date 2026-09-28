@@ -172,8 +172,17 @@ const facts = computed(() => {
             <PixelBar :value="percent(m?.disk_used ?? 0, node.disk_total)" :cells="20" />
             <span class="num">{{ pair(m?.disk_used ?? 0, node.disk_total) }}</span>
           </div>
-          <div class="meter net">
+          <div v-if="node.traffic_limit > 0" class="meter" :title="`本月 ↓${bytes(node.month_rx)} ↑${bytes(node.month_tx)}`">
             <span class="display">NET</span>
+            <PixelBar :value="percent(trafficUsed(node), node.traffic_limit)" :cells="20" color="var(--purple)" />
+            <span class="num">{{ pair(trafficUsed(node), node.traffic_limit) }}</span>
+          </div>
+          <div v-else class="meter net">
+            <span class="display">NET</span>
+            <span class="num muted">本月 ↓{{ bytes(node.month_rx) }} ↑{{ bytes(node.month_tx) }}</span>
+          </div>
+          <div class="meter net">
+            <span class="display">SPD</span>
             <span class="num">
               <PixelIcon name="down" :size="12" class="rx" />{{ rate(m?.net_rx ?? 0) }}
               <PixelIcon name="up" :size="12" class="tx" />{{ rate(m?.net_tx ?? 0) }}
