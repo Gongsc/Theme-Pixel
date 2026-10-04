@@ -2,7 +2,7 @@
   "name": "Pixel · 像素",
   "short": "pixel",
   "description": "8-bit 复古像素风的极简探针主题，黑框硬阴影、方块进度条与像素字体。",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": "Gongsc",
   "url": "https://github.com/Gongsc/Theme-Pixel",
   "config": [
@@ -117,6 +117,7 @@
       "type": "select",
       "label": "默认时间范围",
       "default": "1",
+      "help": "超过 Hub 保留天数时，使用可用的最长范围",
       "options": [
         {
           "value": "1",
@@ -133,6 +134,14 @@
         {
           "value": "168",
           "label": "7 天"
+        },
+        {
+          "value": "720",
+          "label": "30 天"
+        },
+        {
+          "value": "2160",
+          "label": "90 天"
         }
       ]
     }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Node } from '@/api/types'
-import { ago, bytes, CYCLES, expiresIn, money, osName, pair, percent, rate, trafficUsed, uptime } from '@/lib/format'
+import { ago, bytes, cycle, expiresIn, money, osName, pair, percent, rate, trafficUsed, uptime } from '@/lib/format'
 import type { Probe } from '@/api/ping'
 import NodeTags from './NodeTags.vue'
 import PingRows from './PingRows.vue'
@@ -27,7 +27,7 @@ const days = computed(() => expiresIn(props.node))
       <PixelFlag v-if="node.country" :code="node.country" />
     </header>
     <p class="sub muted">{{ [osName(node.os), node.arch, node.virt].filter(Boolean).join(' · ') || '—' }}</p>
-    <NodeTags :remark="node.remark" class="tags" />
+    <NodeTags :node="node" class="tags" />
 
     <template v-if="m">
       <div class="meter">
@@ -70,7 +70,7 @@ const days = computed(() => expiresIn(props.node))
     <footer class="muted">
       <span v-if="m">UP {{ uptime(m.uptime) }}</span>
       <span class="grow" />
-      <span v-if="showPrice && node.price > 0" class="num">{{ money(node.price, node.currency) }}/{{ CYCLES[node.billing_cycle] ?? node.billing_cycle }}</span>
+      <span v-if="showPrice && node.price > 0" class="num">{{ money(node.price, node.currency) }} · {{ cycle(node.billing_cycle) }}</span>
       <span
         v-if="days !== null" class="badge"
         :class="{ warn: days <= 7 && days >= 0, dead: days < 0 }"

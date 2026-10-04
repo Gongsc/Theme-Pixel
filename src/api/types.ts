@@ -59,17 +59,44 @@ export type Node = {
   month_start: string
   day_rx: number
   day_tx: number
+  /** The operator's one line for visitors, up to 100 characters. Hub 1.3.2+. */
+  public_remark?: string
   /**
-   * The operator's note. The hub sends it to a signed-in administrator only;
-   * anonymous visitors never receive it.
+   * The operator's private note. The hub sends it to a signed-in administrator
+   * only; anonymous visitors never receive it.
    */
   remark?: string
 }
 
-export type Me = { authed: boolean, github: boolean, site_name: string, public_page: boolean }
+export type Me = {
+  authed: boolean
+  github: boolean
+  site_name: string
+  public_page: boolean
+  /** Days of history the hub keeps. Hub 1.3.2+; older hubs kept 7. */
+  history_days?: number
+}
+
+export type MetricPoint = {
+  ts: number
+  cpu: number
+  mem_used: number
+  disk_used: number
+  net_rx: number
+  net_tx: number
+  /** Highest CPU within the bucket. Hub 1.3.2+. */
+  cpu_max?: number
+  /** Highest rate measured within the bucket, never below its mean. Hub 1.3.1+. */
+  net_rx_max?: number
+  net_tx_max?: number
+  /** Minutes with data; `step / 60` when full, fewer for the bucket still filling. Hub 1.3.2+. */
+  minutes?: number
+}
 
 export type History = {
-  metrics: { ts: number, cpu: number, mem_used: number, disk_used: number, net_rx: number, net_tx: number }[]
+  /** Seconds each point covers. Hub 1.3.2+; windows past 168 h read hourly rollups. */
+  step?: number
+  metrics: MetricPoint[]
   ping: { ts: number, task_id: number, latency: number | null, loss?: number }[]
   probes: Record<string, string>
   loss?: Record<string, number>

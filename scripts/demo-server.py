@@ -33,18 +33,27 @@ def node(i, name, country, group, online, expires):
                 last_seen=now if online else now - 7200, metrics=m if online else None,
                 os='Ubuntu 24.04.1 LTS', kernel='6.8.0-45-generic', arch='x86_64', virt='kvm',
                 cpu_name='AMD EPYC 7B13 64-Core Processor', cpu_cores=4, mem_total=8 * G, swap_total=G,
-                disk_total=80 * G, agent_version='1.3.0', price=5 + i * 2.5, currency='USD',
-                billing_cycle='monthly', expires_at=None, expires_in=expires,
+                disk_total=80 * G, agent_version='1.3.0', price=5 + i * 2.5,
+                # Hub 1.3.1+ cycles beyond the named six are `<n>m`; a pre-1.3.1 hub may hold any currency text.
+                currency=['USD', 'CNY', 'EUR', 'TWD', '人民币', 'USD'][i],
+                billing_cycle=['monthly', 'yearly', '60m', '18m', 'quarterly', 'once'][i], expires_at=None, expires_in=expires,
                 traffic_limit=(500 * G) if i % 2 == 0 else 0, traffic_mode='sum', traffic_reset_day=1,
                 total_rx=80 * G, total_tx=40 * G, month_rx=(20 + i * 30) * G, month_tx=(10 + i * 8) * G,
                 month_start='', day_rx=3 * G, day_tx=G,
-                remark=['三网优化;CN2 GIA；年付', 'BGP; 原生IP', '', '大带宽', '', ''][i])
+                public_remark=['三网优化;CN2 GIA；年付', 'BGP; 原生IP', '', '大带宽', '', ''][i])
+
+
+HISTORY_DAYS = 30
 
 
 def history(hours, points, series):
+    # Like hub 1.3.2: the window is capped at the retention, and past a week it
+    # is read from hourly rollups, so a point never covers less than an hour.
+    hours = max(1, min(hours, HISTORY_DAYS * 24))
     now = int(time.time())
-    n = min(points, hours * 60)
-    step = hours * 3600 // n
+    floor = 3600 if hours > 168 else 60
+    step = max(floor, -(-hours * 3600 // max(1, points)))
+    n = hours * 3600 // step
     stamps = [now - (n - 1 - k) * step for k in range(n)]
     if series == 'ping':
         probes = {'1': '浙江电信', '2': '浙江联通', '3': '浙江移动'}
@@ -54,11 +63,17 @@ def history(hours, points, series):
                 lost = random.random() < 0.02
                 ping.append(dict(task_id=task, ts=ts, latency=None if lost else base + 8 * math.sin(k / 5 + task) + random.random() * 6,
                                  loss=100 if lost else 0))
-        return dict(metrics=[], ping=ping, probes=probes, loss={'1': 0.4, '2': 0, '3': 2.1})
-    metrics = [dict(ts=ts, cpu=30 + 15 * math.sin(k / 5) + random.random() * 8, mem_used=(3 + .4 * math.sin(k / 30)) * G,
-                    disk_used=(20 + k / n) * G, net_rx=800000 + 300000 * math.sin(k / 4) + random.random() * 2e5,
-                    net_tx=300000 + 100000 * math.cos(k / 6)) for k, ts in enumerate(stamps)]
-    return dict(metrics=metrics, ping=[], probes={}, loss={})
+        return dict(step=step, metrics=[], ping=ping, probes=probes, loss={'1': 0.4, '2': 0, '3': 2.1})
+    metrics = []
+    for k, ts in enumerate(stamps):
+        cpu = 30 + 15 * math.sin(k / 5) + random.random() * 8
+        rx = 800000 + 300000 * math.sin(k / 4) + random.random() * 2e5
+        tx = 300000 + 100000 * math.cos(k / 6)
+        metrics.append(dict(ts=ts, cpu=cpu, cpu_max=min(100, cpu * (1.2 + random.random())), mem_used=(3 + .4 * math.sin(k / 30)) * G,
+                            disk_used=(20 + k / n) * G, net_rx=rx, net_tx=tx,
+                            net_rx_max=rx * (1.3 + 2 * random.random()), net_tx_max=tx * (1.2 + random.random()),
+                            minutes=step // 60 if k < n - 1 else (now % step) // 60))
+    return dict(step=step, metrics=metrics, ping=[], probes={}, loss={})
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -66,7 +81,7 @@ class Handler(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         q = parse_qs(url.query)
         if url.path == '/api/me':
-            data = dict(authed=False, github=False, site_name='极简探针 · 演示', public_page=True)
+            data = dict(authed=False, github=False, site_name='极简探针 · 演示', public_page=True, history_days=HISTORY_DAYS)
         elif url.path == '/api/nodes':
             data = dict(nodes=[node(i, *n) for i, n in enumerate(NODES)])
         elif url.path.startswith('/api/nodes/') and url.path.endswith('/metrics'):

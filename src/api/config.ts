@@ -14,7 +14,7 @@ export type SiteConfig = {
   showPing: boolean
   pingProbes: number
   pingNames: string
-  defaultRange: '1' | '6' | '24' | '168'
+  defaultRange: '1' | '6' | '24' | '168' | '720' | '2160'
 }
 
 const fields = (manifest.config as Field[]).filter((f): f is Field & { key: string } => f.type !== 'title' && !!f.key)

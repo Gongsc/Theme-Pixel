@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 import { api } from '@/api/client'
 import { config } from '@/api/config'
+import { me } from '@/api/me'
 import { nodes } from '@/api/nodes'
 import type { History } from '@/api/types'
 import NodeTags from '@/components/NodeTags.vue'
@@ -9,7 +10,7 @@ import PixelBar from '@/components/PixelBar.vue'
 import PixelChart from '@/components/PixelChart.vue'
 import PixelIcon from '@/components/PixelIcon.vue'
 import {
-  axisTop, bytes, clockFor, cpuName, CYCLES, expiresIn, fullClock, money, osName, pair, percent, rate, timeTicks, trafficUsed, uptime,
+  axisTop, bytes, clockFor, cpuName, cycle, expiresIn, fullClock, money, osName, pair, percent, rate, tickClock, timeTicks, trafficUsed, uptime, windows,
 } from '@/lib/format'
 
 const props = defineProps<{ id: number }>()
@@ -17,14 +18,17 @@ const props = defineProps<{ id: number }>()
 const node = computed(() => nodes.value?.find(n => n.id === props.id))
 const m = computed(() => (node.value?.online ? node.value.metrics : null))
 
-const RANGES = [
-  { hours: 1, label: '1H' },
-  { hours: 6, label: '6H' },
-  { hours: 24, label: '24H' },
-  { hours: 168, label: '7D' },
-]
-const hours = ref(Number(config.value.defaultRange) || 1)
+// Hubs before 1.3.2 send no `history_days` and kept a week.
+const ranges = computed(() => windows(me.value?.history_days ?? 7))
+/** The site's default window, or the longest offered below it when the hub keeps less. */
+function fit(wanted: number): number {
+  return ranges.value.filter(r => r.hours <= wanted).at(-1)?.hours ?? ranges.value[0]!.hours
+}
+const hours = ref(fit(Number(config.value.defaultRange) || 1))
+watch(ranges, (r) => { if (!r.some(x => x.hours === hours.value)) hours.value = fit(hours.value) })
 const metrics = shallowRef<History['metrics']>([])
+/** Seconds per point; an hour or more means the hub answered from its hourly rollups. */
+const step = ref(0)
 const ping = shallowRef<Pick<History, 'ping' | 'probes' | 'loss'>>({ ping: [], probes: {} })
 const loading = ref(false)
 const error = ref('')
@@ -38,6 +42,7 @@ async function load() {
   try {
     const [a, b] = await Promise.all([api<History>(q('metrics'), ac.signal), api<History>(q('ping'), ac.signal)])
     metrics.value = a.metrics ?? []
+    step.value = a.step ?? 0
     ping.value = { ping: b.ping ?? [], probes: b.probes ?? {}, loss: b.loss }
     error.value = ''
   }
@@ -62,10 +67,18 @@ const range = computed(() => {
 })
 const ticks = computed(() => times.value.length ? timeTicks(times.value[0]!, times.value.at(-1)!, 5) : [])
 const xFormat = computed(() => clockFor(hours.value))
+const tickFormat = computed(() => tickClock(ticks.value, hours.value))
+
+/** Peaks are drawn only when the hub sends them; a maximum of the means is no peak. */
+const hasCpuMax = computed(() => metrics.value.some(p => p.cpu_max !== undefined))
+const hasNetMax = computed(() => metrics.value.some(p => p.net_rx_max !== undefined))
 
 const pct = (v: number) => `${Math.round(v)}%`
-const cpuSeries = computed(() => [{ name: 'CPU', color: '--green', values: metrics.value.map(p => p.cpu) }])
-const cpuTop = computed(() => axisTop(Math.max(0, ...metrics.value.map(p => p.cpu)), 20, 10, 100))
+const cpuSeries = computed(() => [
+  { name: 'CPU', color: '--green', values: metrics.value.map(p => p.cpu) },
+  ...(hasCpuMax.value ? [{ name: '峰值', color: '--green', dim: true, values: metrics.value.map(p => p.cpu_max ?? p.cpu) }] : []),
+])
+const cpuTop = computed(() => axisTop(Math.max(0, ...metrics.value.map(p => p.cpu_max ?? p.cpu)), 20, 10, 100))
 
 const memSeries = computed(() => [{ name: '内存', color: '--blue', values: metrics.value.map(p => p.mem_used) }])
 const diskSeries = computed(() => [{ name: '磁盘', color: '--yellow', values: metrics.value.map(p => p.disk_used) }])
@@ -74,8 +87,18 @@ const byteAxis = (v: number) => bytes(v, v >= 1024 ** 3 ? 1 : 0)
 const netSeries = computed(() => [
   { name: '下载', color: '--green', values: metrics.value.map(p => p.net_rx) },
   { name: '上传', color: '--blue', values: metrics.value.map(p => p.net_tx) },
+  ...(hasNetMax.value
+    ? [
+        { name: '下载峰值', color: '--green', dim: true, values: metrics.value.map(p => p.net_rx_max ?? p.net_rx) },
+        { name: '上传峰值', color: '--blue', dim: true, values: metrics.value.map(p => p.net_tx_max ?? p.net_tx) },
+      ]
+    : []),
 ])
-const netTop = computed(() => axisTop(Math.max(0, ...metrics.value.flatMap(p => [p.net_rx, p.net_tx])), 1024 * 16, 1024))
+const netTop = computed(() => axisTop(
+  Math.max(0, ...metrics.value.flatMap(p => [p.net_rx_max ?? p.net_rx, p.net_tx_max ?? p.net_tx])),
+  1024 * 16,
+  1024,
+))
 const netAxis = (v: number) => rate(v).replace('.0', '')
 
 const PING_COLORS = ['--green', '--blue', '--yellow', '--purple', '--red']
@@ -105,6 +128,7 @@ const pingChart = computed(() => {
     ticks: times.length ? timeTicks(times[0]!, times.at(-1)!, 5) : [],
   }
 })
+const pingTickFormat = computed(() => tickClock(pingChart.value.ticks, hours.value))
 const ms = (v: number) => `${Math.round(v)}ms`
 
 // ---- facts ----
@@ -124,7 +148,7 @@ const facts = computed(() => {
     ['在线', m.value ? uptime(m.value.uptime) : '离线'],
     ['本月', `↓${bytes(n.month_rx)} ↑${bytes(n.month_tx)}${n.traffic_limit > 0 ? ` · ${pair(trafficUsed(n), n.traffic_limit)}` : ''}`],
     ['累计', `↓${bytes(n.total_rx)} ↑${bytes(n.total_tx)}`],
-    ['价格', n.price > 0 ? `${money(n.price, n.currency)} / ${CYCLES[n.billing_cycle] ?? n.billing_cycle}` : '—'],
+    ['价格', n.price > 0 ? `${money(n.price, n.currency)} · ${cycle(n.billing_cycle)}` : '—'],
     ['到期', days.value === null ? '长期' : days.value < 0 ? `已过期 ${-days.value} 天` : [n.expires_at?.slice(0, 10), `剩 ${days.value} 天`].filter(Boolean).join(' · ')],
     ['Agent', n.agent_version || '—'],
   ] as const
@@ -149,7 +173,7 @@ const facts = computed(() => {
           <span v-if="node.country" class="badge display">{{ node.country }}</span>
           <span v-if="node.group && node.group !== node.country" class="badge">{{ node.group }}</span>
         </div>
-        <NodeTags :remark="node.remark" class="remark" />
+        <NodeTags :node="node" class="remark" />
 
         <div class="live">
           <div class="meter">
@@ -200,31 +224,32 @@ const facts = computed(() => {
 
       <div class="ranges">
         <button
-          v-for="r in RANGES" :key="r.hours" class="btn display"
+          v-for="r in ranges" :key="r.hours" class="btn display"
           :aria-pressed="hours === r.hours" @click="hours = r.hours"
         >
           {{ r.label }}
         </button>
         <span v-if="loading" class="muted display">LOADING…</span>
         <span v-else-if="error" class="err">{{ error }}</span>
+        <span v-else-if="hours > 168 && step" class="muted">小时汇总 · 每点 {{ step % 3600 ? `${Math.round(step / 60)} 分钟` : `${step / 3600} 小时` }}</span>
       </div>
 
       <div class="charts">
         <section class="box panel">
           <h2 class="display">CPU</h2>
-          <PixelChart :times="times" :series="cpuSeries" :top="cpuTop" :format="pct" :x-format="xFormat" :ticks="ticks" />
+          <PixelChart :times="times" :series="cpuSeries" :top="cpuTop" :format="pct" :x-format="xFormat" :tick-format="tickFormat" :ticks="ticks" />
         </section>
         <section class="box panel">
           <h2 class="display">MEMORY</h2>
-          <PixelChart :times="times" :series="memSeries" :top="node.mem_total" :format="byteAxis" :x-format="xFormat" :ticks="ticks" />
+          <PixelChart :times="times" :series="memSeries" :top="node.mem_total" :format="byteAxis" :x-format="xFormat" :tick-format="tickFormat" :ticks="ticks" />
         </section>
         <section class="box panel">
           <h2 class="display">NETWORK</h2>
-          <PixelChart :times="times" :series="netSeries" :top="netTop" :format="netAxis" :x-format="xFormat" :ticks="ticks" :fill="false" />
+          <PixelChart :times="times" :series="netSeries" :top="netTop" :format="netAxis" :x-format="xFormat" :tick-format="tickFormat" :ticks="ticks" :fill="false" />
         </section>
         <section class="box panel">
           <h2 class="display">DISK</h2>
-          <PixelChart :times="times" :series="diskSeries" :top="node.disk_total" :format="byteAxis" :x-format="xFormat" :ticks="ticks" />
+          <PixelChart :times="times" :series="diskSeries" :top="node.disk_total" :format="byteAxis" :x-format="xFormat" :tick-format="tickFormat" :ticks="ticks" />
         </section>
         <section v-if="pingChart.series.length" class="box panel wide">
           <h2 class="display">PING</h2>
@@ -237,7 +262,7 @@ const facts = computed(() => {
           </ul>
           <PixelChart
             :times="pingChart.times" :series="pingChart.series" :top="pingChart.top" :format="ms"
-            :x-format="xFormat" :ticks="pingChart.ticks" :fill="false" :height="200"
+            :x-format="xFormat" :tick-format="pingTickFormat" :ticks="pingChart.ticks" :fill="false" :height="200"
           />
         </section>
       </div>

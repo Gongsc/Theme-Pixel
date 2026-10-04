@@ -53,15 +53,34 @@ export function expiresIn(n: { expires_in?: number | null, expires_at: string | 
   return Number.isNaN(target) ? null : Math.ceil((target - Date.now()) / 86400000)
 }
 
-const SYMBOLS: Record<string, string> = { USD: '$', CNY: '¥', EUR: '€', GBP: '£', JPY: '¥' }
+const MONEY = new Map<string, Intl.NumberFormat>()
 
+/**
+ * Written the Chinese way, symbol or code before the number, as the hub's
+ * panel writes it. Intl throws on anything but three letters, which hubs
+ * before 1.3.1 could store, so that falls back to the code as written.
+ */
 export function money(amount: number, currency: string): string {
-  const s = SYMBOLS[currency]
-  return s ? `${s}${amount.toFixed(2)}` : `${amount.toFixed(2)} ${currency}`
+  try {
+    let format = MONEY.get(currency)
+    if (!format) MONEY.set(currency, format = new Intl.NumberFormat('zh-CN', { style: 'currency', currency, maximumFractionDigits: 2 }))
+    return format.format(amount)
+  }
+  catch {
+    return `${currency} ${amount.toFixed(2)}`.trim()
+  }
 }
 
-export const CYCLES: Record<string, string> = {
-  monthly: '月', quarterly: '季', semiannual: '半年', yearly: '年', biennial: '两年', triennial: '三年', once: '一次性',
+// Hub 1.3.0 and earlier store only these names; 1.3.1+ stores any other length as `<n>m`.
+const NAMED_CYCLES: Record<string, number> = { monthly: 1, quarterly: 3, semiannual: 6, yearly: 12, biennial: 24, triennial: 36 }
+const CYCLE_WORDS: Record<number, string> = { 1: '月付', 3: '季付', 6: '半年付', 12: '年付' }
+
+/** How a billing cycle reads: 月付, 5 年付, 18 个月付, 一次性. */
+export function cycle(billing: string): string {
+  if (billing === 'once') return '一次性'
+  const months = NAMED_CYCLES[billing] ?? Number(/^(\d+)m$/.exec(billing)?.[1])
+  if (!months) return billing
+  return CYCLE_WORDS[months] ?? (months % 12 ? `${months} 个月付` : `${months / 12} 年付`)
 }
 
 export function osName(name: string): string {
@@ -100,9 +119,38 @@ export function clockFor(hours: number): (ms: number) => string {
   return hours <= 24 ? ms => HHMM.format(ms) : ms => MDHHMM.format(ms)
 }
 
+const MMDD = new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit' })
+
 export const fullClock = (ms: number) => MDHHMM.format(ms)
 
-const TICK_STEPS = [1, 2, 5, 10, 15, 30, 60, 120, 180, 360, 720, 1440, 2880].map(m => m * 60_000)
+/** The date alone once every tick is a local midnight, where "00:00" beside each says nothing. */
+export function tickClock(ticks: number[], hours: number): (ms: number) => string {
+  const midnight = (t: number) => { const d = new Date(t); return d.getHours() === 0 && d.getMinutes() === 0 }
+  return ticks.length > 0 && ticks.every(midnight) ? ms => MMDD.format(ms) : clockFor(hours)
+}
+
+const DAY = 1440
+const TICK_STEPS = [1, 2, 5, 10, 15, 30, 60, 120, 180, 360, 720, DAY, 2 * DAY, 7 * DAY, 14 * DAY, 30 * DAY, 60 * DAY, 90 * DAY]
+  .map(m => m * 60_000)
+
+// Round chart windows, in hours: up to a week the hub draws them from minute
+// rows, past it from its hourly tier.
+const WINDOWS = [1, 6, 24, 168, 720, 2160]
+
+/**
+ * The windows offered for a hub keeping `days` of history: the round windows
+ * shorter than it, then the whole of it. A window past it would be narrowed by
+ * the hub without saying so, under a label claiming more than it holds. A round
+ * window the whole exceeds by less than a quarter is left out, as it would sit
+ * beside one of nearly the same length: 30 and 31 days.
+ */
+export function windows(days: number): { hours: number, label: string }[] {
+  const whole = Math.max(1, Math.floor(days)) * 24
+  return [...WINDOWS.filter(h => h * 1.25 <= whole), whole].map(hours => ({
+    hours,
+    label: hours < 24 ? `${hours}H` : hours === 24 ? '24H' : hours === 8760 ? '1Y' : `${hours / 24}D`,
+  }))
+}
 
 /** Ticks on round clock values, phased on local midnight. */
 export function timeTicks(from: number, to: number, count = 6): number[] {

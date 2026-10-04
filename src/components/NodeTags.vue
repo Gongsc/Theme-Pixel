@@ -1,12 +1,20 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { Node } from '@/api/types'
 
-const props = defineProps<{ remark?: string }>()
+const props = defineProps<{ node: Pick<Node, 'public_remark' | 'remark'> }>()
 
 const COLORS = ['--green', '--blue', '--yellow', '--purple', '--red']
 
-/** Either semicolon splits; the note is typed with a Chinese keyboard as often as not. */
-const tags = computed(() => [...new Set((props.remark ?? '').split(/[;；]/).map(s => s.trim()).filter(Boolean))])
+/**
+ * The public remark, which every visitor receives from hub 1.3.2 on. An older
+ * hub has none, and only its private remark, sent to a signed-in admin.
+ * Either semicolon splits; the note is typed with a Chinese keyboard as often as not.
+ */
+const tags = computed(() => {
+  const text = props.node.public_remark ?? props.node.remark ?? ''
+  return [...new Set(text.split(/[;；]/).map(s => s.trim()).filter(Boolean))]
+})
 
 /** A tag keeps its colour wherever it appears. */
 function color(tag: string): string {

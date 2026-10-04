@@ -7,6 +7,8 @@ export type Series = {
   /** A CSS custom property, e.g. '--green', resolved at draw time so it follows the palette. */
   color: string
   values: (number | null)[]
+  /** Drawn faint and behind the rest: a peak beside the mean it tops. */
+  dim?: boolean
 }
 
 const props = withDefaults(defineProps<{
@@ -15,7 +17,10 @@ const props = withDefaults(defineProps<{
   series: Series[]
   top: number
   format: (v: number) => string
+  /** Tooltip time. */
   xFormat?: (ms: number) => string
+  /** Axis tick labels; the tooltip format when absent. */
+  tickFormat?: (ms: number) => string
   ticks?: number[]
   height?: number
   /** Chart pixel size in CSS pixels: every stroke lands on this grid. */
@@ -66,8 +71,10 @@ function draw() {
   const colOf = (t: number) => Math.round(((t - from.value) / span) * (W - 1))
   const rowOf = (v: number) => (H - 1) - Math.round(Math.min(1, Math.max(0, v / (props.top || 1))) * (H - 1))
 
-  // Later series draw first so the primary one sits on top.
-  props.series.map((s, index) => ({ s, index })).reverse().forEach(({ s, index }) => {
+  // Faint series first, then later ones, so the primary one sits on top.
+  const order = props.series.map((s, index) => ({ s, index })).reverse()
+  const layers = [...order.filter(o => o.s.dim), ...order.filter(o => !o.s.dim)]
+  layers.forEach(({ s, index }) => {
     // Average the samples sharing a column.
     const cols: { x: number, t: number, sum: number, n: number, gap: boolean }[] = []
     props.times.forEach((t, i) => {
@@ -80,14 +87,16 @@ function draw() {
     })
     const color = css.getPropertyValue(s.color) || s.color
     ctx.fillStyle = color
-    const dither = props.fill && index === 0
+    const line = s.dim ? 0.4 : 1
+    ctx.globalAlpha = line
+    const dither = props.fill && index === 0 && !s.dim
     const column = (x: number, y: number, width: number) => {
       ctx.fillRect(x, y, width, 1)
       if (!dither) return
       ctx.globalAlpha = 0.45
       for (let cx = x; cx < x + width; cx++)
         for (let cy = y + 1 + ((cx + y + 1) % 2); cy < H; cy += 2) ctx.fillRect(cx, cy, 1, 1)
-      ctx.globalAlpha = 1
+      ctx.globalAlpha = line
     }
     for (let i = 0; i < cols.length; i++) {
       const a = cols[i]!
@@ -104,6 +113,7 @@ function draw() {
         column(a.x, ya, 1)
       }
     }
+    ctx.globalAlpha = 1
   })
 }
 
@@ -142,7 +152,7 @@ function onMove(e: PointerEvent) {
 
 const hoverX = computed(() => hover.value === null ? 0 : ((props.times[hover.value]! - from.value) / ((to.value - from.value) || 1)) * 100)
 const yLabels = computed(() => [1, 0.75, 0.5, 0.25, 0].map(f => ({ f, text: props.format(props.top * f) })))
-const xLabels = computed(() => (props.ticks ?? []).map(t => ({ left: ((t - from.value) / ((to.value - from.value) || 1)) * 100, text: props.xFormat?.(t) ?? '' })))
+const xLabels = computed(() => (props.ticks ?? []).map(t => ({ left: ((t - from.value) / ((to.value - from.value) || 1)) * 100, text: (props.tickFormat ?? props.xFormat)?.(t) ?? '' })))
 </script>
 
 <template>
@@ -160,7 +170,7 @@ const xLabels = computed(() => (props.ticks ?? []).map(t => ({ left: ((t - from.
         <div class="tip box" :class="{ flip: hoverX > 60 }" :style="{ left: `${hoverX}%` }">
           <div v-if="xFormat" class="muted">{{ xFormat(times[hover]!) }}</div>
           <div v-for="s in series" :key="s.name" class="row">
-            <i :style="{ background: `var(${s.color})` }" />
+            <i :style="{ background: `var(${s.color})`, opacity: s.dim ? 0.4 : 1 }" />
             <span>{{ s.name }}</span>
             <b class="num">{{ s.values[hover] == null ? '—' : format(s.values[hover]!) }}</b>
           </div>
