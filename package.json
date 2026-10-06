@@ -1,6 +1,6 @@
 {
   "name": "monitor-theme-pixel",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "private": true,
   "type": "module",
   "license": "MIT",
@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "test": "node scripts/test-ping.mjs",
     "build": "vue-tsc --build && vite build",
     "preview": "vite preview",
     "package": "npm run build && node scripts/package.mjs"

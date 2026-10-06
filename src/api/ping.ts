@@ -3,6 +3,7 @@ import { api } from './client'
 import { config } from './config'
 import { nodes } from './nodes'
 import type { History } from './types'
+import { probeOrder } from '../lib/probes'
 
 export type Probe = {
   id: string
@@ -23,7 +24,7 @@ const REFRESH = 60_000
 export const pings = shallowRef(new Map<number, Probe[]>())
 
 function summarize(h: Pick<History, 'ping' | 'probes' | 'loss'>): Probe[] {
-  return Object.entries(h.probes ?? {}).map(([id, name]) => {
+  return probeOrder(h).map(([id, name]) => {
     const rows = (h.ping ?? []).filter(p => String(p.task_id) === id).sort((a, b) => a.ts - b.ts)
     const ok = rows.map(p => p.latency).filter((v): v is number => v !== null)
     return {
@@ -91,8 +92,8 @@ export function usePings() {
 
 /**
  * The routes to show: those named in the setting, in its order, else the
- * first `limit`. Names match without regard to case or surrounding spaces;
- * either comma works, since the setting is typed with a Chinese keyboard.
+ * first `limit` in the operator's order. Names match without regard to case
+ * or surrounding spaces; either comma works with a Chinese keyboard.
  */
 export function pickProbes(probes: Probe[], names: string, limit: number): Probe[] {
   const wanted = names.split(/[,，]/).map(s => s.trim().toLowerCase()).filter(Boolean)

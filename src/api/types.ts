@@ -97,6 +97,7 @@ export type History = {
   /** Seconds each point covers. Hub 1.3.2+; windows past 168 h read hourly rollups. */
   step?: number
   metrics: MetricPoint[]
+  /** Probe by probe in the operator's order, each probe's samples oldest first. */
   ping: { ts: number, task_id: number, latency: number | null, loss?: number }[]
   probes: Record<string, string>
   loss?: Record<string, number>

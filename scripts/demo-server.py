@@ -56,14 +56,15 @@ def history(hours, points, series):
     n = hours * 3600 // step
     stamps = [now - (n - 1 - k) * step for k in range(n)]
     if series == 'ping':
-        probes = {'1': '浙江电信', '2': '浙江联通', '3': '浙江移动'}
+        # The panel order differs from numeric ids; the hub emits ping rows in this order.
+        probes = {'12': '浙江电信', '3': '浙江联通', '7': '浙江移动'}
         ping = []
-        for task, base in [(1, 165), (2, 157), (3, 132)]:
+        for task, base in [(12, 165), (3, 157), (7, 132)]:
             for k, ts in enumerate(stamps):
                 lost = random.random() < 0.02
                 ping.append(dict(task_id=task, ts=ts, latency=None if lost else base + 8 * math.sin(k / 5 + task) + random.random() * 6,
                                  loss=100 if lost else 0))
-        return dict(step=step, metrics=[], ping=ping, probes=probes, loss={'1': 0.4, '2': 0, '3': 2.1})
+        return dict(step=step, metrics=[], ping=ping, probes=probes, loss={'12': 0.4, '3': 0, '7': 2.1})
     metrics = []
     for k, ts in enumerate(stamps):
         cpu = 30 + 15 * math.sin(k / 5) + random.random() * 8

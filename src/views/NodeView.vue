@@ -9,6 +9,7 @@ import NodeTags from '@/components/NodeTags.vue'
 import PixelBar from '@/components/PixelBar.vue'
 import PixelChart from '@/components/PixelChart.vue'
 import PixelIcon from '@/components/PixelIcon.vue'
+import { probeOrder } from '@/lib/probes'
 import {
   axisTop, bytes, clockFor, cpuName, cycle, expiresIn, fullClock, money, osName, pair, percent, rate, tickClock, timeTicks, trafficUsed, uptime, windows,
 } from '@/lib/format'
@@ -104,15 +105,15 @@ const netAxis = (v: number) => rate(v).replace('.0', '')
 const PING_COLORS = ['--green', '--blue', '--yellow', '--purple', '--red']
 /** Every probe on one shared time axis; a probe missing at a timestamp is a gap. */
 const pingChart = computed(() => {
-  const ids = Object.keys(ping.value.probes)
+  const probes = probeOrder(ping.value)
   const stamps = [...new Set(ping.value.ping.map(p => p.ts))].sort((a, b) => a - b)
   const index = new Map(stamps.map((t, i) => [t, i]))
-  const series = ids.map((id, i) => {
+  const series = probes.map(([id, name], i) => {
     const values: (number | null)[] = Array.from({ length: stamps.length }, () => null)
     for (const p of ping.value.ping) if (String(p.task_id) === id) values[index.get(p.ts)!] = p.latency
     const ok = values.filter((v): v is number => v !== null)
     return {
-      name: ping.value.probes[id]!,
+      name,
       color: PING_COLORS[i % PING_COLORS.length]!,
       values,
       avg: ok.length ? ok.reduce((a, b) => a + b, 0) / ok.length : null,
