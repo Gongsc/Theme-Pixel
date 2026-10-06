@@ -1,6 +1,7 @@
 node_modules/
 dist/
 release/
+output/previews/
 *.tsbuildinfo
 .DS_Store
 .claude/launch.json

@@ -8,6 +8,8 @@ import PingRows from './PingRows.vue'
 import PixelBar from './PixelBar.vue'
 import PixelFlag from './PixelFlag.vue'
 import PixelIcon from './PixelIcon.vue'
+import PixelGuardian from './PixelGuardian.vue'
+import { runtimeProgress } from '@/lib/runtime'
 
 const props = defineProps<{ node: Node, showPrice: boolean, probes?: Probe[] }>()
 
@@ -17,13 +19,15 @@ const mem = computed(() => percent(m.value?.mem_used ?? 0, props.node.mem_total)
 const disk = computed(() => percent(m.value?.disk_used ?? 0, props.node.disk_total))
 const used = computed(() => trafficUsed(props.node))
 const days = computed(() => expiresIn(props.node))
+const runtime = computed(() => m.value ? runtimeProgress(m.value.uptime) : null)
 </script>
 
 <template>
   <RouterLink :to="`/node/${node.id}`" class="card box" :class="{ off: !node.online }">
     <header>
-      <i class="dot" :class="{ on: node.online }" />
-      <h3>{{ node.name }}</h3>
+      <PixelGuardian :size="28" :online="node.online" class="guardian" />
+      <h3 :title="node.name">{{ node.name }}</h3>
+      <span class="status display" :class="{ connected: node.online }">{{ node.online ? 'ONLINE' : 'OFFLINE' }}</span>
       <PixelFlag v-if="node.country" :code="node.country" />
     </header>
     <p class="sub muted">{{ [osName(node.os), node.arch, node.virt].filter(Boolean).join(' · ') || '—' }}</p>
@@ -47,8 +51,9 @@ const days = computed(() => expiresIn(props.node))
       </div>
     </template>
     <div v-else class="offline display">
-      <span>OFFLINE</span>
-      <small class="muted">{{ ago(node.last_seen) }}</small>
+      <PixelIcon v-if="!node.online" name="alert" :size="26" />
+      <span>{{ node.online ? 'WAITING' : 'OFFLINE' }}</span>
+      <small class="muted">{{ node.online ? '等待指标上报' : `最后在线：${ago(node.last_seen)}` }}</small>
     </div>
 
     <div v-if="node.traffic_limit > 0" class="meter traffic">
@@ -67,8 +72,23 @@ const days = computed(() => expiresIn(props.node))
       <PingRows v-if="probes?.length" :probes="probes" class="pings" />
     </template>
 
+    <section
+      v-if="runtime && m" class="runtime"
+      title="等级按本次系统运行的完整天数计算，每运行 24 小时升一级；系统重启后重新累计。"
+      aria-label="本次系统运行经验"
+    >
+      <div class="experience">
+        <span>运行经验</span>
+        <PixelBar :value="runtime.progress" :cells="12" color="var(--purple)" :aria-label="`距下一级已完成 ${Math.floor(runtime.progress)}%`" />
+        <span class="level badge display num">LV.{{ runtime.label }}</span>
+      </div>
+      <div class="runtime-meta num">
+        <span>运行 {{ m.uptime === 0 ? '0分' : uptime(m.uptime) }}</span>
+        <span>下一级 {{ runtime.nextDays }}天</span>
+      </div>
+    </section>
+
     <footer class="muted">
-      <span v-if="m">UP {{ uptime(m.uptime) }}</span>
       <span class="grow" />
       <span v-if="showPrice && node.price > 0" class="num">{{ money(node.price, node.currency) }} · {{ cycle(node.billing_cycle) }}</span>
       <span
@@ -89,6 +109,24 @@ const days = computed(() => expiresIn(props.node))
   color: inherit;
   text-decoration: none;
   transition: transform 80ms steps(2), box-shadow 80ms steps(2);
+}
+
+.guardian {
+  flex: none;
+}
+
+.status {
+  flex: none;
+  padding: 0 3px;
+  background: #bd332e;
+  color: #fff;
+  font-size: 10px;
+  line-height: 16px;
+}
+
+.status.connected {
+  background: var(--green);
+  color: #101b13;
 }
 
 .card:hover {
@@ -118,14 +156,14 @@ h3 {
 }
 
 .sub {
-  margin: -4px 0 2px 16px;
+  margin: -4px 0 2px 36px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .tags {
-  margin: -2px 0 2px 16px;
+  margin: -2px 0 2px 36px;
 }
 
 .meter {
@@ -184,6 +222,33 @@ h3 {
   font-size: 16px;
 }
 
+.runtime {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 10px;
+  margin-top: auto;
+  border-top: 2px dashed var(--track);
+}
+
+.experience {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.level {
+  color: var(--purple);
+}
+
+.runtime-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 8px;
+}
+
 .offline small {
   font-family: var(--font);
   font-size: 12px;
@@ -193,8 +258,14 @@ footer {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: auto;
+  margin-top: 0;
   font-size: 12px;
+  flex-wrap: wrap;
+  min-height: 18px;
+}
+
+.off footer {
+  margin-top: auto;
 }
 
 .grow {

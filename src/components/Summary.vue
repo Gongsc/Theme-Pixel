@@ -9,6 +9,7 @@ import PixelIcon from './PixelIcon.vue'
 const props = defineProps<{ nodes: Node[], group: string | null }>()
 
 const online = computed(() => props.nodes.filter(n => n.online).length)
+const hearts = computed(() => [...props.nodes].sort((a, b) => Number(b.online) - Number(a.online)).slice(0, 12))
 const speed = computed(() => props.nodes.reduce((t, n) => {
   if (n.online && n.metrics) { t.rx += n.metrics.net_rx; t.tx += n.metrics.net_tx }
   return t
@@ -30,8 +31,17 @@ const top = computed(() => axisTop(Math.max(0, ...history.value.map(p => Math.ma
   <section class="summary">
     <div class="tile box">
       <span class="label muted">在线节点</span>
-      <span class="big display num">{{ online }}<small>/{{ nodes.length }}</small></span>
-      <span class="muted">{{ nodes.length - online ? `${nodes.length - online} 台离线` : '全部在线' }}</span>
+      <div class="party">
+        <span class="big display num">{{ online }}<small>/{{ nodes.length }}</small></span>
+        <div class="hearts" aria-hidden="true" title="一颗爱心表示一台节点的在线状态">
+          <PixelIcon
+            v-for="n in hearts" :key="n.id" :name="n.online ? 'heart' : 'heart-empty'"
+            :size="20" :class="{ connected: n.online }"
+          />
+          <span v-if="nodes.length > hearts.length" class="muted num">+{{ nodes.length - hearts.length }}</span>
+        </div>
+      </div>
+      <span class="muted">{{ !nodes.length ? '等待节点加入' : nodes.length - online ? `${nodes.length - online} 台离线` : '全部在线' }}</span>
     </div>
     <div class="tile box">
       <span class="label muted">实时速率</span>
@@ -88,6 +98,27 @@ const top = computed(() => axisTop(Math.max(0, ...history.value.map(p => Math.ma
   color: var(--muted);
 }
 
+.party {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.hearts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  max-width: 170px;
+}
+
+.connected {
+  color: var(--green);
+  filter: drop-shadow(1px 1px 0 var(--ink));
+}
+
 .speed {
   display: flex;
   flex-wrap: wrap;
@@ -117,5 +148,24 @@ const top = computed(() => axisTop(Math.max(0, ...history.value.map(p => Math.ma
 .wait {
   height: 36px;
   border-bottom: 2px dashed var(--track);
+}
+
+@media (max-width: 719px) {
+  .summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tile:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .tile {
+    padding: 10px;
+  }
+
+  .speed {
+    font-size: 20px;
+    gap: 4px 8px;
+  }
 }
 </style>

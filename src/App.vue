@@ -5,6 +5,8 @@ import { loadConfig } from '@/api/config'
 import { loadMe, me } from '@/api/me'
 import { live, nodes, nodesClosed, startNodes } from '@/api/nodes'
 import PixelIcon from '@/components/PixelIcon.vue'
+import PixelGuardian from '@/components/PixelGuardian.vue'
+import PixelBackdrop from '@/components/PixelBackdrop.vue'
 import { loadFonts } from '@/lib/fonts'
 import { dark, toggleTheme } from '@/lib/theme'
 
@@ -48,10 +50,11 @@ watchEffect(() => { document.title = [nodeName.value, siteName.value].filter(Boo
   </div>
 
   <template v-else-if="me.public_page || me.authed">
+    <PixelBackdrop />
     <header class="top">
       <div class="wrap bar">
         <RouterLink to="/" class="brand">
-          <img src="/logo.png" width="32" height="32" alt="">
+          <PixelGuardian :size="32" />
           <span>{{ siteName }}</span>
         </RouterLink>
         <span class="live" :title="live ? '实时推送中' : '轮询中'">
@@ -69,7 +72,7 @@ watchEffect(() => { document.title = [nodeName.value, siteName.value].filter(Boo
       </div>
     </header>
 
-    <main class="wrap">
+    <main class="wrap content">
       <RouterView />
     </main>
 
@@ -156,6 +159,12 @@ watchEffect(() => { document.title = [nodeName.value, siteName.value].filter(Boo
 
 .grow {
   flex: 1;
+}
+
+.content,
+.foot {
+  position: relative;
+  z-index: 1;
 }
 
 .foot {

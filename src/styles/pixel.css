@@ -69,6 +69,12 @@ body {
   text-rendering: optimizeSpeed;
 }
 
+#app {
+  position: relative;
+  min-height: 100svh;
+  isolation: isolate;
+}
+
 img,
 canvas,
 svg {

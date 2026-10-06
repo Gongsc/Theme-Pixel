@@ -18,6 +18,8 @@ import NodeTable from '@/components/NodeTable.vue'
 import Notice from '@/components/Notice.vue'
 import PixelIcon from '@/components/PixelIcon.vue'
 import Summary from '@/components/Summary.vue'
+import PixelWelcome from '@/components/PixelWelcome.vue'
+import PixelOutpost from '@/components/PixelOutpost.vue'
 
 const all = computed(() => (nodes.value ?? []).filter(n => n.online || !config.value.hideOffline))
 
@@ -60,6 +62,7 @@ const shownPings = computed(() => {
     <p v-if="nodesError" class="err" role="alert">{{ nodesError }}</p>
 
     <template v-if="nodes">
+      <PixelWelcome :nodes="inGroup" />
       <GroupTabs v-if="groups.length" v-model="group" :tabs="tabs" />
       <Summary v-if="config.showSummary" :nodes="inGroup" :group="group" />
 
@@ -81,6 +84,10 @@ const shownPings = computed(() => {
       <p v-else-if="!shown.length" class="empty">没有匹配的节点</p>
       <div v-else-if="view === 'grid'" class="grid">
         <NodeCard v-for="n in shown" :key="n.id" :node="n" :show-price="config.showPrice" :probes="shownPings?.get(n.id)" />
+        <PixelOutpost
+          v-if="shown.length % 4 === 1 || shown.length % 4 === 2"
+          class="outpost" :class="{ wide: shown.length % 4 === 1 }"
+        />
       </div>
       <NodeTable v-else :nodes="shown" :pings="shownPings" />
     </template>
@@ -126,11 +133,49 @@ const shownPings = computed(() => {
   flex: 1;
 }
 
+@media (max-width: 639px) {
+  .tools .grow {
+    display: none;
+  }
+}
+
 .grid {
   display: grid;
   gap: 20px;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  grid-template-columns: minmax(0, 1fr);
   align-items: stretch;
+}
+
+.outpost {
+  display: none;
+}
+
+@media (min-width: 720px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1080px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1360px) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .outpost {
+    display: block;
+    grid-column: span 2;
+    align-self: center;
+  }
+
+  .outpost.wide {
+    grid-column: span 3;
+  }
 }
 
 .ghost {

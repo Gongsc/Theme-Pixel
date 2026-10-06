@@ -1,6 +1,8 @@
 # Pixel for 极简探针
 
-![Pixel 主题首页预览](preview.png)
+![Pixel 主题亮色首页预览](preview.png)
+
+![Pixel 主题暗色首页预览](preview-dark.png)
 
 为 [极简探针 Monitor](https://github.com/monitor-probe/monitor) 制作的 8-bit 复古像素风主题：黑框硬阴影、方块进度条、阶梯折线图与像素字体，亮 / 暗两套配色。
 
@@ -12,7 +14,16 @@
 - **节点延迟**：卡片显示前几条探测线路的最新延迟、近 24 次采样的像素柱状条（绿 <100ms、黄 <200ms、红 ≥200ms 或超时）与 1 小时丢包率；列表视图增加 PING 列。
 - **节点详情** `/node/{id}`：实时负载（CPU / 内存 / 交换 / 磁盘 / 流量配额 / 速率）、系统信息、历史图（CPU、内存、网络、磁盘、多线路 Ping 与丢包），canvas 逐像素绘制，悬停显示读数。时间范围按 Hub 的保留天数生成（1H / 6H / 24H / 7D / 30D / 90D / 全部）；CPU 与网速另以淡色画出区间峰值。
 - **实时数据**：优先使用 `/api/ws` 推送，断开时自动退回 5 秒轮询并重连。
+- **原创游戏元素**：像素守卫、在线节点爱心、运行经验条与 24H / 72H / 7D 成就；等级按本次系统运行的完整天数计算，每 24 小时升一级，重启后重新累计。成就只统计当前分组内在线且已上报指标的节点，不表示历史可用率。
+- **像素世界背景**：淡色云朵、数据包线路与底部地形，宽屏节点网格的剩余空间展示原创机房浮岛；亮暗配色均适配，装饰不遮挡数据或响应点击。
 - **字体**：Silkscreen（英文标题）+ 缝合像素字体 Fusion Pixel 12px（中文），均随主题包分发，不请求第三方服务。
+
+## 1.3.0 更新内容
+
+- 新增原创像素守卫与在线节点爱心，站点图标同步改为守卫。
+- 新增运行经验条、等级与 24H / 72H / 7D 成就，按本次系统启动后的运行时长统计，重启后重新累计。
+- 新增像素云朵、数据包线路、底部地形与宽屏机房浮岛；修复暗色模式下背景插画仍使用亮色的问题。
+- 更新亮色与暗色首页预览图。
 
 ## 适配极简探针 1.3.2
 
@@ -66,4 +77,4 @@ npm run package   # 生成 release/theme.tar.gz
 
 ## 许可
 
-MIT。Silkscreen 与 Fusion Pixel 字体均使用 SIL Open Font License 1.1；国旗来自 [flag-icons](https://github.com/lipis/flag-icons)（MIT）；站点图标来自 [Icons8](https://icons8.com)。
+MIT。Silkscreen 与 Fusion Pixel 字体均使用 SIL Open Font License 1.1；国旗来自 [flag-icons](https://github.com/lipis/flag-icons)（MIT）。当前站点图标、像素守卫、成就与背景插画均为项目内原创 SVG。
