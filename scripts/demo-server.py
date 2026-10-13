@@ -30,7 +30,7 @@ def node(i, name, country, group, online, expires):
              total_rx=80 * G, total_tx=40 * G, month_rx=(20 + i * 30) * G, month_tx=(10 + i * 8) * G,
              tcp=36, udp=8, procs=128)
     return dict(id=i + 1, name=name, sort=i, group=group, public=True, online=online, country=country,
-                last_seen=now if online else now - 7200, metrics=m if online else None,
+                last_seen=now if online else now - 7200, last_seen_ago=0 if online else 7200, metrics=m if online else None,
                 os='Ubuntu 24.04.1 LTS', kernel='6.8.0-45-generic', arch='x86_64', virt='kvm',
                 cpu_name='AMD EPYC 7B13 64-Core Processor', cpu_cores=4, mem_total=8 * G, swap_total=G,
                 disk_total=80 * G, agent_version='1.3.0', price=5 + i * 2.5,
@@ -47,7 +47,7 @@ HISTORY_DAYS = 30
 
 
 def history(hours, points, series):
-    # Like hub 1.3.2: the window is capped at the retention, and past a week it
+    # Like hub 1.4.1: the window is capped at the retention, and past a week it
     # is read from hourly rollups, so a point never covers less than an hour.
     hours = max(1, min(hours, HISTORY_DAYS * 24))
     now = int(time.time())
@@ -73,6 +73,8 @@ def history(hours, points, series):
         metrics.append(dict(ts=ts, cpu=cpu, cpu_max=min(100, cpu * (1.2 + random.random())), mem_used=(3 + .4 * math.sin(k / 30)) * G,
                             disk_used=(20 + k / n) * G, net_rx=rx, net_tx=tx,
                             net_rx_max=rx * (1.3 + 2 * random.random()), net_tx_max=tx * (1.2 + random.random()),
+                            swap_used=int(G * (.2 + .1 * abs(math.sin(k / 7)))), tcp=round(36 + 12 * math.sin(k / 6)),
+                            udp=round(8 + 3 * math.cos(k / 5)), procs=round(128 + 10 * math.sin(k / 8)),
                             minutes=step // 60 if k < n - 1 else (now % step) // 60))
     return dict(step=step, metrics=metrics, ping=[], probes={}, loss={})
 

@@ -30,6 +30,8 @@ export type Node = {
   /** ISO 3166-1 alpha-2, or empty when the hub could not locate the address. */
   country: string
   last_seen: number
+  /** Seconds since the last report by the hub's clock, null if never. Hub 1.4.0+. */
+  last_seen_ago?: number | null
   metrics: Metrics | null
   os: string
   kernel: string
@@ -89,6 +91,11 @@ export type MetricPoint = {
   /** Highest rate measured within the bucket, never below its mean. Hub 1.3.1+. */
   net_rx_max?: number
   net_tx_max?: number
+  /** Bucket means, counts rounded. Hub 1.4.1+. */
+  swap_used?: number
+  tcp?: number
+  udp?: number
+  procs?: number
   /** Minutes with data; `step / 60` when full, fewer for the bucket still filling. Hub 1.3.2+. */
   minutes?: number
 }

@@ -56,8 +56,15 @@ async function load() {
 }
 
 watch([() => props.id, hours], load, { immediate: true })
-const timer = setInterval(load, 60_000)
-onBeforeUnmount(() => { clearInterval(timer); controller?.abort() })
+// Hidden, the page neither reloads nor keeps a request open; shown again, it catches up at once.
+const timer = setInterval(() => { if (!document.hidden) void load() }, 60_000)
+const onVisible = () => document.hidden ? controller?.abort() : void load()
+document.addEventListener('visibilitychange', onVisible)
+onBeforeUnmount(() => {
+  clearInterval(timer)
+  controller?.abort()
+  document.removeEventListener('visibilitychange', onVisible)
+})
 
 // ---- charts ----
 
@@ -73,6 +80,10 @@ const tickFormat = computed(() => tickClock(ticks.value, hours.value))
 /** Peaks are drawn only when the hub sends them; a maximum of the means is no peak. */
 const hasCpuMax = computed(() => metrics.value.some(p => p.cpu_max !== undefined))
 const hasNetMax = computed(() => metrics.value.some(p => p.net_rx_max !== undefined))
+/** Swap, connections and processes have history from hub 1.4.1; older hubs leave them out. */
+const hasSwap = computed(() => (node.value?.swap_total ?? 0) > 0 && metrics.value.some(p => p.swap_used !== undefined))
+const hasConns = computed(() => metrics.value.some(p => p.tcp !== undefined))
+const hasProcs = computed(() => metrics.value.some(p => p.procs !== undefined))
 
 const pct = (v: number) => `${Math.round(v)}%`
 const cpuSeries = computed(() => [
@@ -81,7 +92,12 @@ const cpuSeries = computed(() => [
 ])
 const cpuTop = computed(() => axisTop(Math.max(0, ...metrics.value.map(p => p.cpu_max ?? p.cpu)), 20, 10, 100))
 
-const memSeries = computed(() => [{ name: '内存', color: '--blue', values: metrics.value.map(p => p.mem_used) }])
+const memSeries = computed(() => [
+  { name: '内存', color: '--blue', values: metrics.value.map(p => p.mem_used) },
+  ...(hasSwap.value ? [{ name: 'Swap', color: '--purple', values: metrics.value.map(p => p.swap_used ?? null) }] : []),
+])
+/** Swap shares the memory axis, so the larger of the two sets its top. */
+const memTop = computed(() => Math.max(node.value?.mem_total ?? 0, hasSwap.value ? node.value?.swap_total ?? 0 : 0))
 const diskSeries = computed(() => [{ name: '磁盘', color: '--yellow', values: metrics.value.map(p => p.disk_used) }])
 const byteAxis = (v: number) => bytes(v, v >= 1024 ** 3 ? 1 : 0)
 
@@ -101,6 +117,15 @@ const netTop = computed(() => axisTop(
   1024,
 ))
 const netAxis = (v: number) => rate(v).replace('.0', '')
+
+const connSeries = computed(() => [
+  { name: 'TCP', color: '--green', values: metrics.value.map(p => p.tcp ?? null) },
+  { name: 'UDP', color: '--blue', values: metrics.value.map(p => p.udp ?? null) },
+])
+const connTop = computed(() => axisTop(Math.max(0, ...metrics.value.flatMap(p => [p.tcp ?? 0, p.udp ?? 0])), 20))
+const procSeries = computed(() => [{ name: '进程', color: '--yellow', values: metrics.value.map(p => p.procs ?? null) }])
+const procTop = computed(() => axisTop(Math.max(0, ...metrics.value.map(p => p.procs ?? 0)), 20))
+const count = (v: number) => String(Math.round(v))
 
 const PING_COLORS = ['--green', '--blue', '--yellow', '--purple', '--red']
 /** Every probe on one shared time axis; a probe missing at a timestamp is a gap. */
@@ -242,7 +267,7 @@ const facts = computed(() => {
         </section>
         <section class="box panel">
           <h2 class="display">MEMORY</h2>
-          <PixelChart :times="times" :series="memSeries" :top="node.mem_total" :format="byteAxis" :x-format="xFormat" :tick-format="tickFormat" :ticks="ticks" />
+          <PixelChart :times="times" :series="memSeries" :top="memTop" :format="byteAxis" :x-format="xFormat" :tick-format="tickFormat" :ticks="ticks" />
         </section>
         <section class="box panel">
           <h2 class="display">NETWORK</h2>
@@ -251,6 +276,14 @@ const facts = computed(() => {
         <section class="box panel">
           <h2 class="display">DISK</h2>
           <PixelChart :times="times" :series="diskSeries" :top="node.disk_total" :format="byteAxis" :x-format="xFormat" :tick-format="tickFormat" :ticks="ticks" />
+        </section>
+        <section v-if="hasConns" class="box panel">
+          <h2 class="display">CONNECTIONS</h2>
+          <PixelChart :times="times" :series="connSeries" :top="connTop" :format="count" :x-format="xFormat" :tick-format="tickFormat" :ticks="ticks" :fill="false" />
+        </section>
+        <section v-if="hasProcs" class="box panel">
+          <h2 class="display">PROCESSES</h2>
+          <PixelChart :times="times" :series="procSeries" :top="procTop" :format="count" :x-format="xFormat" :tick-format="tickFormat" :ticks="ticks" />
         </section>
         <section v-if="pingChart.series.length" class="box panel wide">
           <h2 class="display">PING</h2>

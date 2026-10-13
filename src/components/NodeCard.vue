@@ -53,7 +53,7 @@ const runtime = computed(() => m.value ? runtimeProgress(m.value.uptime) : null)
     <div v-else class="offline display">
       <PixelIcon v-if="!node.online" name="alert" :size="26" />
       <span>{{ node.online ? 'WAITING' : 'OFFLINE' }}</span>
-      <small class="muted">{{ node.online ? '等待指标上报' : `最后在线：${ago(node.last_seen)}` }}</small>
+      <small class="muted">{{ node.online ? '等待指标上报' : `最后在线：${ago(node)}` }}</small>
     </div>
 
     <div v-if="node.traffic_limit > 0" class="meter traffic">

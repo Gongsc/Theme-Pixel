@@ -47,7 +47,7 @@ const live = (n: Node) => (n.online ? n.metrics : null)
             >{{ p.latest === null ? '×' : Math.round(p.latest) }}</span>
             <span v-if="!pings.get(n.id)?.length" class="muted">—</span>
           </td>
-          <td v-else-if="!live(n)" :colspan="pings ? 5 : 4" class="gone">OFFLINE · {{ ago(n.last_seen) }}</td>
+          <td v-else-if="!live(n)" :colspan="pings ? 5 : 4" class="gone">OFFLINE · {{ ago(n) }}</td>
           <td class="num">{{ bytes(trafficUsed(n)) }}<span v-if="n.traffic_limit > 0" class="muted"> / {{ bytes(n.traffic_limit) }}</span></td>
           <td class="num">{{ live(n) ? uptime(live(n)!.uptime) : '—' }}</td>
         </tr>

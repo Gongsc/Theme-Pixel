@@ -36,9 +36,16 @@ export function uptime(seconds: number): string {
   return d > 0 ? `${d}天${h}时` : h > 0 ? `${h}时${m}分` : `${m}分`
 }
 
-export function ago(unix: number): string {
-  if (!unix) return '从未上线'
-  const s = Math.max(0, Date.now() / 1000 - unix)
+/**
+ * How long since a node last reported. Hub 1.4.0+ counts it on its own clock
+ * (`last_seen_ago`, null when never seen); older hubs leave the browser's
+ * clock to subtract from `last_seen`, wrong by however far the visitor's is off.
+ */
+export function ago(n: { last_seen: number, last_seen_ago?: number | null }): string {
+  const s = n.last_seen_ago !== undefined
+    ? n.last_seen_ago
+    : n.last_seen ? Math.max(0, Date.now() / 1000 - n.last_seen) : null
+  if (s === null) return '从未上线'
   if (s < 60) return '刚刚'
   if (s < 3600) return `${Math.floor(s / 60)} 分钟前`
   if (s < 86400) return `${Math.floor(s / 3600)} 小时前`

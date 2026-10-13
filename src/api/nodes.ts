@@ -59,41 +59,106 @@ function receive(list: unknown) {
 
 let started = false
 
-/** Uses the WebSocket the hub pushes every two seconds, polling while it is down. */
+/** Failures in a row before the error shows: a phone back from the background often has no network for a second or two. */
+const FAILURE_LIMIT = 3
+
+/** `?gzip` frames are compressed binary (hub 1.4.0+); signed-in views and older hubs still send text. */
+const GZIP = typeof DecompressionStream === 'function'
+
+async function frameText(data: unknown): Promise<string> {
+  if (typeof data === 'string') return data
+  const stream = new Blob([data as ArrayBuffer]).stream().pipeThrough(new DecompressionStream('gzip'))
+  return new Response(stream).text()
+}
+
+/**
+ * Uses the WebSocket the hub pushes every two seconds, polling while it is
+ * down. A hub already holding its 1000 anonymous streams answers the handshake
+ * with 503, so retries back off to a minute while the poll carries the page.
+ * A hidden page holds neither: phones cut its connections silently, so it
+ * drops them and starts afresh when shown again.
+ */
 export function startNodes() {
   if (started) return
   started = true
   let socket: WebSocket | null = null
   let poll: ReturnType<typeof setInterval> | null = null
+  let retry: ReturnType<typeof setTimeout> | null = null
+  let backoff = 5000
+  let controller: AbortController | undefined
+  let failures = 0
+  let updated = 0
+  let resumed = 0
 
-  const fetchOnce = () => api<{ nodes: Node[] }>('/nodes')
-    .then(d => receive(d.nodes))
-    .catch((e: Error) => {
-      nodesError.value = e.message
-      if (e instanceof ApiError && e.status === 401) nodesClosed.value = true
-    })
+  const fetchOnce = () => {
+    controller?.abort()
+    const ac = controller = new AbortController()
+    return api<{ nodes: Node[] }>('/nodes', ac.signal)
+      .then((d) => { failures = 0; updated = Date.now(); receive(d.nodes) })
+      .catch((e: Error) => {
+        if (e.name === 'AbortError') return
+        if (e instanceof ApiError && e.status === 401) nodesClosed.value = true
+        if (++failures >= FAILURE_LIMIT || !nodes.value) nodesError.value = e.message
+      })
+  }
 
   const startPoll = () => { poll ??= setInterval(fetchOnce, 5000) }
-  const url = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/api/ws`
+  const url = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/api/ws${GZIP ? '?gzip' : ''}`
 
   // A hub restart closes every stream; without reconnecting the page would
   // stay on the slower poll for the rest of its life.
   const connect = () => {
-    try { socket = new WebSocket(url) }
+    retry = null
+    let ws: WebSocket
+    try { ws = socket = new WebSocket(url) }
     catch { startPoll(); return }
-    socket.onmessage = (event) => {
-      try { receive(JSON.parse(event.data).nodes) }
+    ws.binaryType = 'arraybuffer'
+    ws.onopen = () => { backoff = 5000 }
+    ws.onmessage = async (event) => {
+      try { receive(JSON.parse(await frameText(event.data)).nodes) }
       catch { return }
+      if (socket !== ws) return
+      failures = 0
+      updated = Date.now()
       live.value = true
       if (poll) { clearInterval(poll); poll = null }
     }
-    socket.onerror = () => socket?.close()
-    socket.onclose = () => {
+    ws.onerror = () => ws.close()
+    ws.onclose = () => {
+      if (socket !== ws) return
+      socket = null
       live.value = false
       startPoll()
-      setTimeout(connect, 5000)
+      retry = setTimeout(connect, backoff)
+      backoff = Math.min(backoff * 2, 60_000)
     }
   }
+
+  const pause = () => {
+    controller?.abort()
+    if (poll) { clearInterval(poll); poll = null }
+    if (retry) { clearTimeout(retry); retry = null }
+    const ws = socket
+    socket = null
+    ws?.close()
+    live.value = false
+    failures = 0
+  }
+
+  const resume = () => {
+    pause()
+    resumed = Date.now()
+    backoff = 5000
+    void fetchOnce()
+    connect()
+  }
+
+  document.addEventListener('visibilitychange', () => document.hidden ? pause() : resume())
+  // A home-screen web app on iOS may wake without visibilitychange, or late:
+  // data older than two poll intervals on a visible page means it just woke.
+  const wake = () => { if (!document.hidden && Date.now() - Math.max(updated, resumed) > 10_000) resume() }
+  window.addEventListener('pageshow', wake)
+  window.addEventListener('focus', wake)
 
   void fetchOnce()
   connect()
