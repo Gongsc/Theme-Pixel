@@ -18,7 +18,6 @@ import NodeTable from '@/components/NodeTable.vue'
 import Notice from '@/components/Notice.vue'
 import PixelIcon from '@/components/PixelIcon.vue'
 import Summary from '@/components/Summary.vue'
-import PixelWelcome from '@/components/PixelWelcome.vue'
 import PixelOutpost from '@/components/PixelOutpost.vue'
 
 const all = computed(() => (nodes.value ?? []).filter(n => n.online || !config.value.hideOffline))
@@ -62,8 +61,6 @@ const shownPings = computed(() => {
     <p v-if="nodesError" class="err" role="alert">{{ nodesError }}</p>
 
     <template v-if="nodes">
-      <PixelWelcome :nodes="inGroup" />
-      <GroupTabs v-if="groups.length" v-model="group" :tabs="tabs" />
       <Summary v-if="config.showSummary" :nodes="inGroup" :group="group" />
 
       <div class="tools">
@@ -71,7 +68,8 @@ const shownPings = computed(() => {
           <span class="display">&gt;</span>
           <input v-model="query" class="input" type="search" placeholder="搜索节点 / 地区 / 系统" aria-label="搜索节点">
         </label>
-        <div class="grow" />
+        <GroupTabs v-if="groups.length" v-model="group" class="tool-groups" :tabs="tabs" />
+        <div v-else class="grow" />
         <button class="btn icon" title="卡片" :aria-pressed="view === 'grid'" @click="layout = 'grid'">
           <PixelIcon name="grid" :size="16" />
         </button>
@@ -123,10 +121,17 @@ const shownPings = computed(() => {
   gap: 8px;
   flex: 1;
   max-width: 360px;
+  min-width: 0;
 }
 
 .search .input {
   flex: 1;
+  min-width: 0;
+}
+
+.tool-groups {
+  flex: 1;
+  min-width: 0;
 }
 
 .grow {
@@ -134,6 +139,15 @@ const shownPings = computed(() => {
 }
 
 @media (max-width: 639px) {
+  .tools {
+    flex-wrap: wrap;
+  }
+
+  .tool-groups {
+    order: 1;
+    flex-basis: 100%;
+  }
+
   .tools .grow {
     display: none;
   }

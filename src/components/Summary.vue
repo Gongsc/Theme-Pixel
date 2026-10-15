@@ -5,6 +5,8 @@ import type { Node } from '@/api/types'
 import { axisTop, bytes, rate } from '@/lib/format'
 import PixelChart from './PixelChart.vue'
 import PixelIcon from './PixelIcon.vue'
+import PixelGuardian from './PixelGuardian.vue'
+import PixelWelcome from './PixelWelcome.vue'
 
 const props = defineProps<{ nodes: Node[], group: string | null }>()
 
@@ -28,48 +30,78 @@ const top = computed(() => axisTop(Math.max(0, ...history.value.map(p => Math.ma
 </script>
 
 <template>
-  <section class="summary">
-    <div class="tile box">
-      <span class="label muted">在线节点</span>
-      <div class="party">
-        <span class="big display num">{{ online }}<small>/{{ nodes.length }}</small></span>
-        <div class="hearts" aria-hidden="true" title="一颗爱心表示一台节点的在线状态">
-          <PixelIcon
-            v-for="n in hearts" :key="n.id" :name="n.online ? 'heart' : 'heart-empty'"
-            :size="20" :class="{ connected: n.online }"
-          />
-          <span v-if="nodes.length > hearts.length" class="muted num">+{{ nodes.length - hearts.length }}</span>
+  <section class="overview box" aria-labelledby="overview-title">
+    <header class="overview-heading">
+      <PixelGuardian :size="36" aria-hidden="true" />
+      <h2 id="overview-title">概览</h2>
+      <span class="scope muted">{{ group === null ? '全部节点' : group || '未分组' }}</span>
+    </header>
+    <div class="summary">
+      <div class="tile">
+        <span class="label muted">在线节点</span>
+        <div class="party">
+          <span class="big display num">{{ online }}<small>/{{ nodes.length }}</small></span>
+          <div class="hearts" aria-hidden="true" title="一颗爱心表示一台节点的在线状态">
+            <PixelIcon
+              v-for="n in hearts" :key="n.id" :name="n.online ? 'heart' : 'heart-empty'"
+              :size="20" :class="{ connected: n.online }"
+            />
+            <span v-if="nodes.length > hearts.length" class="muted num">+{{ nodes.length - hearts.length }}</span>
+          </div>
         </div>
+        <span class="muted">{{ !nodes.length ? '等待节点加入' : nodes.length - online ? `${nodes.length - online} 台离线` : '全部在线' }}</span>
       </div>
-      <span class="muted">{{ !nodes.length ? '等待节点加入' : nodes.length - online ? `${nodes.length - online} 台离线` : '全部在线' }}</span>
+      <div class="tile">
+        <span class="label muted">实时速率</span>
+        <span class="speed num">
+          <span><PixelIcon name="down" :size="12" class="rx" />{{ rate(speed.rx) }}</span>
+          <span><PixelIcon name="up" :size="12" class="tx" />{{ rate(speed.tx) }}</span>
+        </span>
+        <PixelChart
+          v-if="history.length > 1" class="spark" :times="times" :series="series" :top="top" :format="rate"
+          :axes="false" :height="36" :px="2"
+        />
+        <div v-else class="spark wait" />
+      </div>
+      <div class="tile">
+        <span class="label muted">本月流量</span>
+        <span class="speed num">
+          <span><PixelIcon name="down" :size="12" class="rx" />{{ bytes(month.rx) }}</span>
+          <span><PixelIcon name="up" :size="12" class="tx" />{{ bytes(month.tx) }}</span>
+        </span>
+        <span class="muted">累计 ↓{{ bytes(total.rx) }} ↑{{ bytes(total.tx) }}</span>
+      </div>
     </div>
-    <div class="tile box">
-      <span class="label muted">实时速率</span>
-      <span class="speed num">
-        <span><PixelIcon name="down" :size="12" class="rx" />{{ rate(speed.rx) }}</span>
-        <span><PixelIcon name="up" :size="12" class="tx" />{{ rate(speed.tx) }}</span>
-      </span>
-      <PixelChart
-        v-if="history.length > 1" class="spark" :times="times" :series="series" :top="top" :format="rate"
-        :axes="false" :height="36" :px="2"
-      />
-      <div v-else class="spark wait" />
-    </div>
-    <div class="tile box">
-      <span class="label muted">本月流量</span>
-      <span class="speed num">
-        <span><PixelIcon name="down" :size="12" class="rx" />{{ bytes(month.rx) }}</span>
-        <span><PixelIcon name="up" :size="12" class="tx" />{{ bytes(month.tx) }}</span>
-      </span>
-      <span class="muted">累计 ↓{{ bytes(total.rx) }} ↑{{ bytes(total.tx) }}</span>
-    </div>
+    <PixelWelcome :nodes="nodes" />
   </section>
 </template>
 
 <style scoped>
+.overview { min-width: 0; }
+
+.overview-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 2px solid var(--track);
+}
+
+.overview-heading h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: normal;
+}
+
+.scope {
+  margin-left: auto;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
 .summary {
   display: grid;
-  gap: 16px;
+  gap: 0;
   grid-template-columns: 1fr;
 }
 
@@ -84,7 +116,11 @@ const top = computed(() => axisTop(Math.max(0, ...history.value.map(p => Math.ma
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-  padding: 12px 14px;
+  padding: 18px 20px;
+}
+
+.tile + .tile {
+  border-left: 2px solid var(--track);
 }
 
 .big {
@@ -155,12 +191,17 @@ const top = computed(() => axisTop(Math.max(0, ...history.value.map(p => Math.ma
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .overview-heading { padding: 12px; }
+
   .tile:first-child {
     grid-column: 1 / -1;
+    border-bottom: 2px solid var(--track);
   }
 
+  .tile:nth-child(2) { border-left: 0; }
+
   .tile {
-    padding: 10px;
+    padding: 14px 12px;
   }
 
   .speed {
