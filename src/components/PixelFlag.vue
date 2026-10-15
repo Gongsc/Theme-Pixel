@@ -12,8 +12,8 @@ const urls = new Map(Object.entries(FLAGS).map(([path, url]) => [path.split('/')
 /** Rasterized once per country, shared by every card. */
 const cache = new Map<string, Promise<string>>()
 
-const W = 12
-const H = 9
+const W = 24
+const H = 18
 
 function pixelate(url: string): Promise<string> {
   return new Promise((resolve, reject) => {
