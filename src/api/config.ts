@@ -20,10 +20,10 @@ export type SiteConfig = {
   defaultRange: '1' | '6' | '24' | '168' | '720' | '2160'
 }
 
-const fields = (manifest.config as Field[]).filter((f): f is Field & { key: string } => f.type !== 'title' && !!f.key)
-const defaults = Object.fromEntries(fields.map(f => [f.key, f.default])) as SiteConfig
+export const configFields = (manifest.config as Field[]).filter((f): f is Field & { key: string } => f.type !== 'title' && !!f.key)
+export const configDefaults = Object.fromEntries(configFields.map(f => [f.key, f.default])) as SiteConfig
 
-function fits(field: Field, value: unknown): boolean {
+export function fits(field: Field, value: unknown): boolean {
   switch (field.type) {
     case 'boolean': return typeof value === 'boolean'
     case 'number': return typeof value === 'number' && Number.isFinite(value)
@@ -35,7 +35,7 @@ function fits(field: Field, value: unknown): boolean {
   }
 }
 
-export const config = shallowRef<SiteConfig>({ ...defaults })
+export const config = shallowRef<SiteConfig>({ ...configDefaults })
 
 /** The master switch applies to cards and details, including signed-in users. */
 export const showNodePrice = computed(() => config.value.showPrice &&
@@ -48,8 +48,8 @@ export async function loadConfig(): Promise<SiteConfig> {
     if (res.ok) {
       const saved = await res.json() as Record<string, unknown>
       if (saved && typeof saved === 'object' && !Array.isArray(saved)) {
-        const valid = fields.filter(f => Object.hasOwn(saved, f.key) && fits(f, saved[f.key]))
-        config.value = { ...defaults, ...Object.fromEntries(valid.map(f => [f.key, saved[f.key]])) }
+        const valid = configFields.filter(f => Object.hasOwn(saved, f.key) && fits(f, saved[f.key]))
+        config.value = { ...configDefaults, ...Object.fromEntries(valid.map(f => [f.key, saved[f.key]])) }
       }
     }
   }

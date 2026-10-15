@@ -7,11 +7,13 @@ import { live, nodes, nodesClosed, startNodes } from '@/api/nodes'
 import PixelIcon from '@/components/PixelIcon.vue'
 import PixelGuardian from '@/components/PixelGuardian.vue'
 import PixelBackdrop from '@/components/PixelBackdrop.vue'
+import ThemeConfigTransfer from '@/components/ThemeConfigTransfer.vue'
 import { loadFonts } from '@/lib/fonts'
 import { dark, toggleTheme } from '@/lib/theme'
 
 const route = useRoute()
 const error = ref('')
+const showConfigTransfer = ref(false)
 const siteIconUrl = ref('/favicon.svg')
 const failedLogos = ref<string[]>([])
 const logoUrl = computed(() => [config.value.logoUrl.trim(), siteIconUrl.value, '/weathercock.png']
@@ -79,6 +81,7 @@ watchEffect(() => { document.title = [nodeName.value, siteName.value].filter(Boo
           <span class="display">{{ live ? 'LIVE' : 'POLL' }}</span>
         </span>
         <div class="grow" />
+        <button v-if="me.authed" class="btn config-button" type="button" @click="showConfigTransfer = true">主题配置</button>
         <a class="btn" href="/admin/">
           <PixelIcon name="key" :size="14" />
           <span>{{ me.authed ? '后台' : '登录' }}</span>
@@ -88,6 +91,8 @@ watchEffect(() => { document.title = [nodeName.value, siteName.value].filter(Boo
         </button>
       </div>
     </header>
+
+    <ThemeConfigTransfer v-if="me.authed && showConfigTransfer" @close="showConfigTransfer = false" />
 
     <main class="wrap content">
       <RouterView />

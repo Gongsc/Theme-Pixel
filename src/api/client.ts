@@ -17,16 +17,17 @@ async function failure(res: Response): Promise<ApiError> {
     : `请求被拦截（HTTP ${res.status}）`))
 }
 
-export async function api<T>(path: string, signal?: AbortSignal): Promise<T> {
+export async function api<T>(path: string, signal?: AbortSignal, init: RequestInit = {}): Promise<T> {
   let res: Response
   try {
-    res = await fetch(`/api${path}`, { credentials: 'same-origin', signal })
+    res = await fetch(`/api${path}`, { ...init, credentials: 'same-origin', signal })
   }
   catch (e) {
     if ((e as Error).name === 'AbortError') throw e
     throw new ApiError(0, '网络连接失败')
   }
   if (!res.ok) throw await failure(res)
+  if (res.status === 204) return undefined as T
   return res.json().catch(() => {
     throw new ApiError(res.status, '收到的不是状态数据')
   })
