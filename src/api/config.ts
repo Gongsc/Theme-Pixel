@@ -7,6 +7,7 @@ type Field = { key?: string, type: string, default?: unknown, options?: { value:
 export type SiteConfig = {
   defaultTheme: 'system' | 'light' | 'dark'
   cardLayout: 'grid' | 'list'
+  logoUrl: string
   pixelFont: boolean
   notice: string
   showSummary: boolean

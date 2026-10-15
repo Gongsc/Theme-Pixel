@@ -49,6 +49,13 @@
       ]
     },
     {
+      "key": "logoUrl",
+      "type": "string",
+      "label": "自定义 Logo 地址",
+      "default": "",
+      "help": "可选：覆盖顶栏 Logo，支持图片 URL 或站内路径；留空时跟随 Hub 后台的站点图标，加载失败时依次回退到站点图标和默认风向鸡图标"
+    },
+    {
       "key": "pixelFont",
       "type": "boolean",
       "label": "中文像素字体",

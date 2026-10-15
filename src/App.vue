@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
-import { loadConfig } from '@/api/config'
+import { config, loadConfig } from '@/api/config'
 import { loadMe, me } from '@/api/me'
 import { live, nodes, nodesClosed, startNodes } from '@/api/nodes'
 import PixelIcon from '@/components/PixelIcon.vue'
@@ -12,6 +12,16 @@ import { dark, toggleTheme } from '@/lib/theme'
 
 const route = useRoute()
 const error = ref('')
+const siteIconUrl = ref('/favicon.svg')
+const failedLogos = ref<string[]>([])
+const logoUrl = computed(() => [config.value.logoUrl.trim(), siteIconUrl.value, '/weathercock.png']
+  .find(url => url && !failedLogos.value.includes(url)))
+watch(() => config.value.logoUrl, () => { failedLogos.value = [] })
+
+function logoError(event: Event) {
+  const source = (event.target as HTMLImageElement).getAttribute('src')
+  if (source) failedLogos.value = [...failedLogos.value, source]
+}
 
 async function boot() {
   error.value = ''
@@ -25,6 +35,8 @@ async function boot() {
 }
 
 onMounted(() => {
+  // Hub serves its configured icon here and stamps the link with a content version.
+  siteIconUrl.value = document.querySelector<HTMLLinkElement>('link[rel="icon"]')?.getAttribute('href') || '/favicon.svg'
   startNodes()
   void boot()
 })
@@ -54,7 +66,12 @@ watchEffect(() => { document.title = [nodeName.value, siteName.value].filter(Boo
     <header class="top">
       <div class="wrap bar">
         <RouterLink to="/" class="brand">
-          <PixelGuardian :size="32" />
+          <img
+            v-if="logoUrl" :key="logoUrl" :src="logoUrl"
+            class="site-logo" width="32" height="32" alt=""
+            @error="logoError"
+          >
+          <PixelGuardian v-else :size="32" aria-hidden="true" />
           <span>{{ siteName }}</span>
         </RouterLink>
         <span class="live" :title="live ? '实时推送中' : '轮询中'">
@@ -136,6 +153,19 @@ watchEffect(() => { document.title = [nodeName.value, siteName.value].filter(Boo
   font-size: 24px;
   line-height: 1;
   text-decoration: none;
+}
+
+.site-logo {
+  display: block;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  image-rendering: auto;
+}
+
+.brand > img,
+.brand > svg {
+  flex-shrink: 0;
 }
 
 .brand span {

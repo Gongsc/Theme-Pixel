@@ -64,6 +64,7 @@
 | --- | --- |
 | 默认配色 | 跟随系统 / 亮色 / 暗色；访客手动切换后以访客为准 |
 | 默认布局 | 卡片或列表 |
+| 自定义 Logo 地址 | 可选：覆盖顶栏 Logo，支持图片 URL 或站内路径，等比显示。留空时跟随 Hub 后台的站点图标（刷新页面后生效）；加载失败时依次回退到站点图标和默认风向鸡图标。浏览器页签图标仍使用 Hub 的站点图标设置 |
 | 中文像素字体 | 关闭后中文使用系统字体，并不再加载约 600 KB 的字体文件 |
 | 公告 | 首页顶部纯文本公告 |
 | 显示概览 / 隐藏离线节点 | 首页显示开关 |
@@ -96,4 +97,4 @@ npm run package   # 生成 release/theme.tar.gz
 
 ## 许可
 
-MIT。Silkscreen 与 Fusion Pixel 字体均使用 SIL Open Font License 1.1；国旗来自 [flag-icons](https://github.com/lipis/flag-icons)（MIT）。当前站点图标、像素守卫、成就与背景插画均为项目内原创 SVG。
+MIT。Silkscreen 与 Fusion Pixel 字体均使用 SIL Open Font License 1.1；国旗来自 [flag-icons](https://github.com/lipis/flag-icons)（MIT）。默认站点 Logo 使用站长提供的风向鸡图片；像素守卫、成就与背景插画为项目内原创 SVG。
