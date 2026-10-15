@@ -8,7 +8,7 @@ import PingRows from './PingRows.vue'
 import PixelBar from './PixelBar.vue'
 import PixelFlag from './PixelFlag.vue'
 import PixelIcon from './PixelIcon.vue'
-import PixelGuardian from './PixelGuardian.vue'
+import PixelOsLogo from './PixelOsLogo.vue'
 import { runtimeProgress } from '@/lib/runtime'
 
 const props = defineProps<{ node: Node, showPrice: boolean, probes?: Probe[] }>()
@@ -25,7 +25,7 @@ const runtime = computed(() => m.value ? runtimeProgress(m.value.uptime) : null)
 <template>
   <RouterLink :to="`/node/${node.id}`" class="card box" :class="{ off: !node.online }">
     <header>
-      <PixelGuardian :size="28" :online="node.online" class="guardian" />
+      <PixelOsLogo :os="node.os" :online="node.online" />
       <h3 :title="node.name">{{ node.name }}</h3>
       <span class="status display" :class="{ connected: node.online }">{{ node.online ? 'ONLINE' : 'OFFLINE' }}</span>
       <PixelFlag v-if="node.country" :code="node.country" />
@@ -109,10 +109,6 @@ const runtime = computed(() => m.value ? runtimeProgress(m.value.uptime) : null)
   color: inherit;
   text-decoration: none;
   transition: transform 80ms steps(2), box-shadow 80ms steps(2);
-}
-
-.guardian {
-  flex: none;
 }
 
 .status {

@@ -9,7 +9,7 @@
 ## 功能
 
 - **首页**：在线数、实时速率（带 2 分钟像素迷你图）、本月 / 累计流量与运行时长统计整合为概览；搜索框后提供分组筛选；卡片 / 列表两种布局；离线节点置底。
-- **节点卡片**：右上角像素国旗；CPU / 内存 / 磁盘 / 流量配额方块条、实时上下行、在线时长、到期天数（使用 Hub 下发的 `expires_in`），可选显示价格。
+- **节点卡片**：左上角按操作系统名称匹配像素 Logo（覆盖 21 种系统图标，无法识别时显示通用服务器图标，离线时变灰），右上角像素国旗；CPU / 内存 / 磁盘 / 流量配额方块条、实时上下行、在线时长、到期天数（使用 Hub 下发的 `expires_in`），可选显示价格。
 - **备注标签**：节点的公开备注（Hub 1.3.2 起的 `public_remark`）按 `;` 或 `；` 拆分为多个标签，显示在卡片与详情页，所有访客可见；同名标签颜色固定。旧版 Hub 没有公开备注，退回读取只下发给已登录管理员的私有备注。
 - **节点延迟**：卡片显示前几条探测线路的最新延迟、近 24 次采样的像素柱状条（绿 <100ms、黄 <200ms、红 ≥200ms 或超时）与 1 小时丢包率；列表视图增加 PING 列。
 - **节点详情** `/node/{id}`：实时负载（CPU / 内存 / 交换 / 磁盘 / 流量配额 / 速率）、系统信息、历史图（CPU、内存与 Swap、网络、磁盘、TCP / UDP 连接数、进程数、多线路 Ping 与丢包），canvas 逐像素绘制，悬停显示读数。时间范围按 Hub 的保留天数生成（1H / 6H / 24H / 7D / 30D / 90D / 全部）；CPU 与网速另以淡色画出区间峰值。Swap、连接数与进程数需要 Hub 1.4.1+，旧版 Hub 不显示这几项。
@@ -106,7 +106,7 @@
 ```sh
 npm ci
 npm run dev       # 开发服务器，/api 代理到 127.0.0.1:9911
-npm test          # 延迟排序、价格可见性与配置导入导出回归验证
+npm test          # 延迟排序、价格可见性、配置导入导出与系统图标匹配验证
 npm run build     # 类型检查并构建
 npm run package   # 生成 release/theme.tar.gz
 ```
@@ -117,4 +117,4 @@ npm run package   # 生成 release/theme.tar.gz
 
 ## 许可
 
-MIT。Silkscreen 与 Fusion Pixel 字体均使用 SIL Open Font License 1.1；国旗来自 [flag-icons](https://github.com/lipis/flag-icons)（MIT）。默认站点 Logo 使用站长提供的风向鸡图片；像素守卫、成就与背景插画为项目内原创 SVG。
+MIT。Silkscreen 与 Fusion Pixel 字体均使用 SIL Open Font License 1.1；国旗来自 [flag-icons](https://github.com/lipis/flag-icons)（MIT）。操作系统 Logo 主要提取自 [komari-theme-Glassmorphism](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism)，Proxmox 图标来自 [Devicon](https://github.com/devicons/devicon)（均为 MIT）；在卡片内以透明底 28×28 像素栅格显示，许可证随主题包分发；默认站点 Logo 使用站长提供的风向鸡图片；像素守卫、成就与背景插画为项目内原创 SVG。

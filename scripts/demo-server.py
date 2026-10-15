@@ -31,7 +31,9 @@ def node(i, name, country, group, online, expires):
              tcp=36, udp=8, procs=128)
     return dict(id=i + 1, name=name, sort=i, group=group, public=True, online=online, country=country,
                 last_seen=now if online else now - 7200, last_seen_ago=0 if online else 7200, metrics=m if online else None,
-                os='Ubuntu 24.04.1 LTS', kernel='6.8.0-45-generic', arch='x86_64', virt='kvm',
+                os=['Ubuntu 24.04.1 LTS', 'Debian GNU/Linux 12 (bookworm)', 'Microsoft Windows Server 2022',
+                    'Rocky Linux 9.4', 'AlmaLinux 9.4', 'FreeBSD 14.2'][i],
+                kernel='10.0.20348' if i == 2 else '14.2-RELEASE' if i == 5 else '6.8.0-45-generic', arch='x86_64', virt='kvm',
                 cpu_name='AMD EPYC 7B13 64-Core Processor', cpu_cores=4, mem_total=8 * G, swap_total=G,
                 disk_total=80 * G, agent_version='1.3.0', price=5 + i * 2.5,
                 # Hub 1.3.1+ cycles beyond the named six are `<n>m`; a pre-1.3.1 hub may hold any currency text.
