@@ -4,6 +4,7 @@ import { latencyColor, type Probe } from '@/api/ping'
 import type { Node } from '@/api/types'
 import { ago, bytes, expiresIn, percent, rate, trafficUsed, uptime } from '@/lib/format'
 import PixelBar from './PixelBar.vue'
+import NodeTags from './NodeTags.vue'
 
 defineProps<{ nodes: Node[], pings?: Map<number, Probe[]> }>()
 const router = useRouter()
@@ -33,6 +34,7 @@ const live = (n: Node) => (n.online ? n.metrics : null)
             <RouterLink :to="`/node/${n.id}`" @click.stop>{{ n.name }}</RouterLink>
             <span v-if="n.country" class="badge display">{{ n.country }}</span>
             <span v-if="(expiresIn(n) ?? Infinity) < 0" class="badge dead">已过期</span>
+            <NodeTags :node="n" class="table-tags" />
           </td>
           <template v-if="live(n)">
             <td><div class="cell"><PixelBar :value="live(n)!.cpu" :cells="8" /><span class="num">{{ live(n)!.cpu.toFixed(0) }}%</span></div></td>
@@ -98,16 +100,21 @@ tr.off {
 
 .name {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   max-width: 320px;
 }
 
 .name a {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   text-decoration: none;
 }
+
+.table-tags { flex-basis: 100%; min-width: 0; }
 
 .cell {
   display: grid;

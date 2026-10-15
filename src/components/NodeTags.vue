@@ -1,20 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Node } from '@/api/types'
+import { me } from '@/api/me'
+import { remarkTags } from '@/lib/remarks'
 
 const props = defineProps<{ node: Pick<Node, 'public_remark' | 'remark'> }>()
 
 const COLORS = ['--green', '--blue', '--yellow', '--purple', '--red']
 
-/**
- * The public remark, which every visitor receives from hub 1.3.2 on. An older
- * hub has none, and only its private remark, sent to a signed-in admin.
- * Either semicolon splits; the note is typed with a Chinese keyboard as often as not.
- */
-const tags = computed(() => {
-  const text = props.node.public_remark ?? props.node.remark ?? ''
-  return [...new Set(text.split(/[;；]/).map(s => s.trim()).filter(Boolean))]
-})
+const tags = computed(() => remarkTags(props.node, me.value?.authed === true))
 
 /** A tag keeps its colour wherever it appears. */
 function color(tag: string): string {
@@ -26,8 +20,9 @@ function color(tag: string): string {
 
 <template>
   <ul v-if="tags.length" class="tags">
-    <li v-for="t in tags" :key="t">
-      <i :style="{ background: color(t) }" />{{ t }}
+    <li v-for="tag in tags" :key="`${tag.private}:${tag.text}`" :class="{ private: tag.private }" :title="`${tag.private ? '私有备注（仅管理员可见）：' : '公开备注：'}${tag.text}`">
+      <i :style="{ background: color(tag.text) }" aria-hidden="true" />
+      {{ tag.text }}
     </li>
   </ul>
 </template>
@@ -56,6 +51,8 @@ li {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.private { border-style: dashed; }
 
 i {
   flex: none;
