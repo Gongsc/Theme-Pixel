@@ -77,7 +77,14 @@
       "type": "boolean",
       "label": "显示价格",
       "default": false,
-      "help": "在节点卡片上显示价格与付费周期"
+      "help": "显示节点卡片与详情页的价格和付费周期；关闭时对所有人隐藏"
+    },
+    {
+      "key": "hidePriceForGuests",
+      "type": "boolean",
+      "label": "对未登录访客隐藏价格与付费周期",
+      "default": false,
+      "help": "仅在开启「显示价格」时生效；开启后仅已登录用户可见，关闭后访客也可见"
     },
     {
       "key": "hideOffline",

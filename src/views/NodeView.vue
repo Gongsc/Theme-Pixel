@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 import { api } from '@/api/client'
-import { config } from '@/api/config'
+import { config, showNodePrice } from '@/api/config'
 import { me } from '@/api/me'
 import { nodes } from '@/api/nodes'
 import type { History } from '@/api/types'
@@ -174,7 +174,7 @@ const facts = computed(() => {
     ['在线', m.value ? uptime(m.value.uptime) : '离线'],
     ['本月', `↓${bytes(n.month_rx)} ↑${bytes(n.month_tx)}${n.traffic_limit > 0 ? ` · ${pair(trafficUsed(n), n.traffic_limit)}` : ''}`],
     ['累计', `↓${bytes(n.total_rx)} ↑${bytes(n.total_tx)}`],
-    ['价格', n.price > 0 ? `${money(n.price, n.currency)} · ${cycle(n.billing_cycle)}` : '—'],
+    ...(showNodePrice.value ? [['价格', n.price > 0 ? `${money(n.price, n.currency)} · ${cycle(n.billing_cycle)}` : '—']] : []),
     ['到期', days.value === null ? '长期' : days.value < 0 ? `已过期 ${-days.value} 天` : [n.expires_at?.slice(0, 10), `剩 ${days.value} 天`].filter(Boolean).join(' · ')],
     ['Agent', n.agent_version || '—'],
   ] as const

@@ -1,4 +1,5 @@
-import { shallowRef } from 'vue'
+import { computed, shallowRef } from 'vue'
+import { me } from './me'
 import manifest from '../../theme.json'
 
 type Field = { key?: string, type: string, default?: unknown, options?: { value: string }[], min?: number, max?: number }
@@ -10,6 +11,7 @@ export type SiteConfig = {
   notice: string
   showSummary: boolean
   showPrice: boolean
+  hidePriceForGuests: boolean
   hideOffline: boolean
   showPing: boolean
   pingProbes: number
@@ -33,6 +35,10 @@ function fits(field: Field, value: unknown): boolean {
 }
 
 export const config = shallowRef<SiteConfig>({ ...defaults })
+
+/** The master switch applies to cards and details, including signed-in users. */
+export const showNodePrice = computed(() => config.value.showPrice &&
+  (!config.value.hidePriceForGuests || me.value?.authed === true))
 
 /** Anonymous visitors, older hubs and unreachable hubs all render the defaults. */
 export async function loadConfig(): Promise<SiteConfig> {

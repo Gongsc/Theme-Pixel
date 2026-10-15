@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "test": "node scripts/test-ping.mjs",
+    "test": "node scripts/test-ping.mjs && node scripts/test-price.mjs",
     "build": "vue-tsc --build && vite build",
     "preview": "vite preview",
     "package": "npm run build && node scripts/package.mjs"

@@ -9,7 +9,7 @@ const layout = ref<'grid' | 'list' | null>(null)
 
 <script setup lang="ts">
 import { computed, watch } from 'vue'
-import { config } from '@/api/config'
+import { config, showNodePrice } from '@/api/config'
 import { nodes, nodesError } from '@/api/nodes'
 import { pickProbes, pings, usePings, type Probe } from '@/api/ping'
 import GroupTabs from '@/components/GroupTabs.vue'
@@ -81,7 +81,7 @@ const shownPings = computed(() => {
       <p v-if="!all.length" class="empty display">NO NODES YET</p>
       <p v-else-if="!shown.length" class="empty">没有匹配的节点</p>
       <div v-else-if="view === 'grid'" class="grid">
-        <NodeCard v-for="n in shown" :key="n.id" :node="n" :show-price="config.showPrice" :probes="shownPings?.get(n.id)" />
+        <NodeCard v-for="n in shown" :key="n.id" :node="n" :show-price="showNodePrice" :probes="shownPings?.get(n.id)" />
         <PixelOutpost
           v-if="shown.length % 4 === 1 || shown.length % 4 === 2"
           class="outpost" :class="{ wide: shown.length % 4 === 1 }"
