@@ -2,7 +2,7 @@
   "name": "Pixel · 像素",
   "short": "pixel",
   "description": "8-bit 复古像素风的极简探针主题，黑框硬阴影、方块进度条与像素字体。",
-  "version": "1.3.5",
+  "version": "1.3.6",
   "author": "Gongsc",
   "url": "https://github.com/Gongsc/Theme-Pixel",
   "config": [
@@ -47,6 +47,13 @@
           "label": "列表"
         }
       ]
+    },
+    {
+      "key": "animatedBackground",
+      "type": "boolean",
+      "label": "背景动态效果",
+      "default": true,
+      "help": "开启为动态背景；关闭为静态背景，停止云朵、植物、数据光点和信号灯动画。系统开启减少动态效果时优先使用静态背景"
     },
     {
       "key": "logoUrl",

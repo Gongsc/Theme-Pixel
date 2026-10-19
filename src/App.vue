@@ -97,12 +97,6 @@ watchEffect(() => { document.title = [nodeName.value, siteName.value].filter(Boo
     <main class="wrap content">
       <RouterView />
     </main>
-
-    <footer class="wrap foot muted">
-      <span>POWERED BY 极简探针</span>
-      <span>·</span>
-      <a href="https://github.com/Gongsc/Theme-Pixel" target="_blank" rel="noopener">THEME PIXEL</a>
-    </footer>
   </template>
 </template>
 
@@ -196,27 +190,11 @@ watchEffect(() => { document.title = [nodeName.value, siteName.value].filter(Boo
   flex: 1;
 }
 
-.content,
-.foot {
+.content {
   position: relative;
   z-index: 1;
 }
 
-.foot {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-  padding: 32px 0 40px;
-}
-
-.foot a {
-  text-decoration: none;
-}
-
-.foot a:hover {
-  color: var(--ink);
-}
 </style>
 
 <style>

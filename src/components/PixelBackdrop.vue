@@ -1,24 +1,18 @@
+<script setup lang="ts">
+import PixelOutpost from '@/components/PixelOutpost.vue'
+import PixelValley from '@/components/PixelValley.vue'
+import PixelCloud from '@/components/PixelCloud.vue'
+import PixelFoliage from '@/components/PixelFoliage.vue'
+import { config } from '@/api/config'
+</script>
+
 <template>
-  <div class="pixel-backdrop" aria-hidden="true">
+  <div class="pixel-backdrop" :class="{ 'is-static': !config.animatedBackground }" aria-hidden="true">
     <svg class="sky" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" focusable="false" shape-rendering="crispEdges">
-      <!-- Quiet scenery at the edges keeps the monitoring panels in focus. -->
-      <g class="cloud cloud-a" transform="translate(570 224)">
-        <path class="cloud-shadow" d="M0 16h16V8h24V0h32v8h24v8h20v16H0z" />
-        <path class="cloud-face" d="M0 12h16V4h24v-8h32v8h24v8h20v16H0z" />
-        <path class="cloud-highlight" d="M28 4h16v-8h20v8h24v8H28z" />
-      </g>
-      <g class="cloud cloud-b" transform="translate(1184 218)">
-        <path class="cloud-shadow" d="M0 16h12V8h20V0h28v8h24v8h12v16H0z" />
-        <path class="cloud-face" d="M0 12h12V4h20v-8h28v8h24v8h12v16H0z" />
-        <path class="cloud-highlight" d="M24 4h12v-8h20v8h20v8H24z" />
-      </g>
-      <g class="cloud cloud-c" transform="translate(278 550)">
-        <path class="cloud-shadow" d="M0 12h12V4h16v-8h28v8h20v8h12v16H0z" />
-        <path class="cloud-face" d="M0 8h12V0h16v-8h28v8h20v8h12v16H0z" />
-      </g>
-      <g class="cloud cloud-d" transform="translate(1020 662)">
-        <path class="cloud-face" d="M0 12h16V4h24v-8h28v8h20v8h16v12H0z" />
-      </g>
+      <g transform="translate(570 224) scale(0.65)"><PixelCloud style="--cloud-delay: -8s" /></g>
+      <g transform="translate(1184 218) scale(0.7)"><PixelCloud style="--cloud-delay: -16s; --cloud-duration: 32s" /></g>
+      <g transform="translate(278 550) scale(0.6)"><PixelCloud style="--cloud-delay: -12s; --cloud-duration: 30s" /></g>
+      <g transform="translate(1020 662) scale(0.8)"><PixelCloud style="--cloud-delay: -24s" /></g>
 
       <g class="stars">
         <path d="M198 94h4v4h4v4h-4v4h-4v-4h-4v-4h4z" />
@@ -40,41 +34,58 @@
         <path class="packet-purple" d="M186 646h8v8h-8zM1210 672h8v8h-8z" />
         <path class="packet-warm" d="M332 626h8v8h-8z" />
       </g>
+      <rect class="data-mote mote-a" width="7" height="7" />
+      <rect class="data-mote mote-b" width="7" height="7" />
     </svg>
 
-    <svg class="terrain" viewBox="0 0 1440 200" preserveAspectRatio="none" focusable="false" shape-rendering="crispEdges">
-      <path class="mountains-back" d="M0 112h40v-16h40V76h40V56h48V36h48v20h40v20h48v24h52v20h72v-16h56V84h56V68h56V52h48v16h48v20h56v24h88v-20h64V76h48V56h48V40h48v16h48v24h48v20h48v16h72v-16h64V84h48V68h48V52h48v16h40v28h48v16h80v88H0z" />
-      <path class="mountains-front" d="M0 146h64v-16h48v-20h48V90h40v20h48v20h56v16h120v-16h56v-20h56V94h48v16h56v20h64v16h128v-16h48v-20h48V94h40v16h48v20h56v16h128v-16h56v-16h48V98h48v16h48v16h48v16h64v54H0z" />
-      <path class="ground" d="M0 170h88v-8h80v8h116v-12h76v12h152v-8h100v8h128v-12h76v12h108v-8h96v8h160v-12h76v12h84v30H0z" />
-      <path class="ground-detail" d="M36 180h16v4H36zM116 172h8v4h-8zM220 184h12v4h-12zM382 180h20v4h-20zM504 176h12v4h-12zM618 186h20v4h-20zM764 176h12v4h-12zM888 182h16v4h-16zM1024 176h8v4h-8zM1144 184h16v4h-16zM1288 176h12v4h-12zM1392 182h16v4h-16z" />
-      <g class="grass">
-        <path d="M60 170v-8h4v4h4v-8h4v12zM332 170v-8h4v4h4v-8h4v12zM680 170v-8h4v4h4v-8h4v12zM1064 170v-8h4v4h4v-8h4v12zM1360 170v-8h4v4h4v-8h4v12z" />
+    <PixelOutpost class="backdrop-outpost" />
+
+    <svg class="distant-island" viewBox="0 0 240 160" focusable="false" shape-rendering="crispEdges">
+      <path class="islet-rock-shadow" d="M24 90h192v16h-24v12h-28v16h-24v18h-32v-18H84v-16H56v-12H24z" />
+      <path class="islet-rock" d="M24 86h192v16h-28v12h-32v16h-20v14h-20v-18H92v-16H60V98H24z" />
+      <path class="islet-stone" d="M56 98h20v12H56zM104 116h16v12h-16zM164 102h20v12h-20z" />
+      <path class="islet-grass" d="M16 78h24v-8h36v-8h80v8h40v8h28v16h-32v8H52v-8H16z" />
+      <path class="islet-grass-light" d="M24 78h28v-8h100v8h52v8H24z" />
+      <path class="islet-metal" d="M88 30h4v44h-4zM80 70h20v4H80zM84 22h12v12H84zM136 46h40v30h-40z" />
+      <path class="islet-wall" d="M140 50h32v22h-32z" />
+      <path class="islet-window" d="M144 54h24v10h-24z" />
+      <g class="islet-plants">
+        <g transform="translate(56 74) scale(0.24)"><PixelFoliage kind="shrub" /></g>
+        <g transform="translate(192 78) scale(0.3)"><PixelFoliage style="--sway-delay: -2s" /></g>
       </g>
     </svg>
+
+    <PixelValley />
   </div>
 </template>
 
 <style scoped>
 .pixel-backdrop {
-  --world-cloud: #dce6e5;
-  --world-cloud-edge: #cbdad8;
-  --world-cloud-light: #edf0e5;
+  --world-cloud: #f5efdc;
+  --world-cloud-edge: #bfd2ce;
+  --world-cloud-light: #fff9e9;
   --world-star: #cbded8;
   --world-warm: #e8dcae;
   --world-line: #dce4d9;
   --world-packet: #cadbd2;
   --world-purple: #ddd3e7;
-  --world-back: #e9eadf;
-  --world-front: #e2e6d7;
-  --world-ground: #d9dfca;
-  --world-grass: #cad5bb;
-  --world-ground-detail: #cfd6c0;
-  position: absolute;
+  --islet-rock: #d6c9ad;
+  --islet-rock-shadow: #bdb8ad;
+  --islet-stone: #bcb09a;
+  --islet-grass: #bdcc9f;
+  --islet-grass-light: #d3ddba;
+  --islet-metal: #92aaa2;
+  --islet-wall: #eeedde;
+  --islet-window: #afcbc6;
+  /* The entire world uses the viewport, independent of document height. */
+  position: fixed;
   inset: 0;
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
   user-select: none;
+  background-image: radial-gradient(var(--grid) 1px, transparent 1px);
+  background-size: 8px 8px;
 }
 
 :root.dark .pixel-backdrop {
@@ -86,23 +97,32 @@
   --world-line: #263b37;
   --world-packet: #354940;
   --world-purple: #3d344d;
-  --world-back: #1d2529;
-  --world-front: #232e2e;
-  --world-ground: #2a3530;
-  --world-grass: #344236;
-  --world-ground-detail: #313e35;
+  --islet-rock: #534d3f;
+  --islet-rock-shadow: #393d3b;
+  --islet-stone: #665b49;
+  --islet-grass: #4b6040;
+  --islet-grass-light: #60794e;
+  --islet-metal: #5f7b71;
+  --islet-wall: #697060;
+  --islet-window: #608b80;
 }
 
 .sky {
   position: absolute;
   inset: 0;
   width: 100%;
-  height: min(100%, 900px);
+  height: 100%;
 }
 
-.cloud-face { fill: var(--world-cloud); }
-.cloud-shadow { fill: var(--world-cloud-edge); }
-.cloud-highlight { fill: var(--world-cloud-light); }
+.backdrop-outpost {
+  position: absolute;
+  right: max(16px, calc((100vw - 1400px) / 2));
+  bottom: clamp(72px, 12vh, 140px);
+  width: clamp(340px, 40vw, 640px);
+  height: auto;
+  aspect-ratio: 3 / 2;
+}
+
 .stars { fill: var(--world-star); }
 .star-warm,
 .packet-warm { fill: var(--world-warm); }
@@ -110,28 +130,61 @@
 .packets { fill: var(--world-packet); }
 .packet-purple { fill: var(--world-purple); }
 
-.terrain {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  height: clamp(112px, 20vh, 180px);
+.data-mote {
+  fill: var(--world-packet);
+  offset-rotate: 0deg;
+  animation: packet-travel 22s steps(64, end) infinite;
 }
 
-.mountains-back { fill: var(--world-back); }
-.mountains-front { fill: var(--world-front); }
-.ground { fill: var(--world-ground); }
-.ground-detail { fill: var(--world-ground-detail); }
-.grass { fill: var(--world-grass); }
+.mote-a { offset-path: path('M0 348h98v24h64v24h76v24h60'); }
+.mote-b {
+  offset-path: path('M1068 716h76v-20h70v-20h66v-20h106');
+  animation-delay: -11s;
+}
+
+@keyframes packet-travel {
+  from { offset-distance: 0%; }
+  to { offset-distance: 100%; }
+}
+
+.distant-island {
+  position: absolute;
+  right: clamp(16px, 3vw, 56px);
+  bottom: clamp(360px, 46vh, 540px);
+  width: clamp(96px, 12vw, 172px);
+  height: auto;
+  opacity: 0.7;
+}
+
+.islet-rock { fill: var(--islet-rock); }
+.islet-rock-shadow { fill: var(--islet-rock-shadow); }
+.islet-stone { fill: var(--islet-stone); }
+.islet-grass { fill: var(--islet-grass); }
+.islet-grass-light { fill: var(--islet-grass-light); }
+.islet-metal { fill: var(--islet-metal); }
+.islet-wall { fill: var(--islet-wall); }
+.islet-window { fill: var(--islet-window); }
+
+:root.dark .islet-plants { filter: brightness(0.6) saturate(0.7); }
 
 @media (max-width: 639px) {
   .sky { opacity: 0.6; }
-  .terrain { height: 96px; }
+  .distant-island { display: none; }
+  .backdrop-outpost {
+    right: 8px;
+    bottom: 88px;
+    width: min(80vw, 360px);
+    opacity: 0.75;
+  }
+}
+
+.pixel-backdrop.is-static :deep(*) {
+  animation: none;
+  transition: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pixel-backdrop *,
-  .pixel-backdrop *::before,
-  .pixel-backdrop *::after {
+  .pixel-backdrop :deep(*) {
     animation: none;
     transition: none;
   }

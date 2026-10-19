@@ -10,19 +10,21 @@ const server = await createServer({
 const originalFetch = globalThis.fetch
 try {
   const { me } = await server.ssrLoadModule('/src/api/me.ts')
-  const { configDefaults } = await server.ssrLoadModule('/src/api/config.ts')
+  const { configDefaults, config, loadConfig } = await server.ssrLoadModule('/src/api/config.ts')
   const { exportThemeSettings, importThemeSettings, readThemeSettings, saveThemeSettings } = await server.ssrLoadModule('/src/lib/config-transfer.ts')
-  const saved = { notice: '公告\n第二行', showPrice: true, hidePriceForGuests: true, pingProbes: 4 }
+  const saved = { notice: '公告\n第二行', showPrice: true, hidePriceForGuests: true, pingProbes: 4, animatedBackground: false }
   const original = structuredClone(saved)
   const contents = exportThemeSettings(saved)
   const parsed = JSON.parse(contents)
+  assert.equal(configDefaults.animatedBackground, true, 'Existing sites keep animated backgrounds by default')
+  assert.equal(parsed.config.animatedBackground, false, 'Exports preserve static mode')
   assert.deepEqual(importThemeSettings(contents).values, { ...configDefaults, ...saved })
   assert.deepEqual(saved, original)
   const file = config => JSON.stringify({ ...parsed, config })
   assert.throws(() => importThemeSettings(JSON.stringify({ ...parsed, theme: { short: 'other' } })), /其他主题/)
   assert.throws(() => importThemeSettings(JSON.stringify({ ...parsed, version: 2 })), /导出配置/)
   for (const value of ['bad json', 'null', '[]']) assert.throws(() => importThemeSettings(value))
-  for (const config of [null, [], { showPrice: 'false' }, { pingProbes: 0 }, { pingProbes: 7 }, { defaultRange: 'bogus' }, { logoUrl: 42 }]) {
+  for (const config of [null, [], { showPrice: 'false' }, { animatedBackground: 'false' }, { pingProbes: 0 }, { pingProbes: 7 }, { defaultRange: 'bogus' }, { logoUrl: 42 }]) {
     assert.throws(() => importThemeSettings(file(config)))
   }
   assert.throws(() => importThemeSettings(' '.repeat(256 * 1024 + 1)), /256 KiB/)
@@ -31,6 +33,15 @@ try {
   assert.equal(older.ignored, 1)
   assert.equal(importThemeSettings(file(JSON.parse('{"__proto__":{"polluted":true}}'))).ignored, 1)
   assert.equal({}.polluted, undefined)
+
+  globalThis.fetch = async () => Response.json({ animatedBackground: false })
+  await loadConfig()
+  assert.equal(config.value.animatedBackground, false, 'Saved false must not be replaced with the default')
+  for (const legacy of [{}, { animatedBackground: 'false' }]) {
+    globalThis.fetch = async () => Response.json(legacy)
+    await loadConfig()
+    assert.equal(config.value.animatedBackground, true, 'Missing or invalid settings use the default')
+  }
 
   let calls = []
   globalThis.fetch = async (path, init) => {
@@ -47,6 +58,10 @@ try {
   assert.equal(calls[1].credentials, 'same-origin')
   assert.equal(calls[1].headers['content-type'], 'application/json')
   assert.equal(calls[1].path, '/api/themes/pixel/config')
+
+  calls = []
+  await saveThemeSettings({ ...configDefaults, animatedBackground: false })
+  assert.equal(JSON.parse(calls[1].body).animatedBackground, false, 'Saves preserve static mode')
 
   calls = []
   globalThis.fetch = async (path, init) => { calls.push(init?.method || 'GET'); return new Response('denied', { status: 401 }) }

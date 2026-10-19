@@ -18,7 +18,6 @@ import NodeTable from '@/components/NodeTable.vue'
 import Notice from '@/components/Notice.vue'
 import PixelIcon from '@/components/PixelIcon.vue'
 import Summary from '@/components/Summary.vue'
-import PixelOutpost from '@/components/PixelOutpost.vue'
 
 const all = computed(() => (nodes.value ?? []).filter(n => n.online || !config.value.hideOffline))
 
@@ -82,10 +81,6 @@ const shownPings = computed(() => {
       <p v-else-if="!shown.length" class="empty">没有匹配的节点</p>
       <div v-else-if="view === 'grid'" class="grid">
         <NodeCard v-for="n in shown" :key="n.id" :node="n" :show-price="showNodePrice" :probes="shownPings?.get(n.id)" />
-        <PixelOutpost
-          v-if="shown.length % 4 === 1 || shown.length % 4 === 2"
-          class="outpost" :class="{ wide: shown.length % 4 === 1 }"
-        />
       </div>
       <NodeTable v-else :nodes="shown" :pings="shownPings" />
     </template>
@@ -160,10 +155,6 @@ const shownPings = computed(() => {
   align-items: stretch;
 }
 
-.outpost {
-  display: none;
-}
-
 @media (min-width: 720px) {
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -181,15 +172,6 @@ const shownPings = computed(() => {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .outpost {
-    display: block;
-    grid-column: span 2;
-    align-self: center;
-  }
-
-  .outpost.wide {
-    grid-column: span 3;
-  }
 }
 
 .ghost {
