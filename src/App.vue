@@ -193,6 +193,7 @@ watchEffect(() => { document.title = [nodeName.value, siteName.value].filter(Boo
 .content {
   position: relative;
   z-index: 1;
+  padding-bottom: calc(clamp(48px, 8svh, 80px) + env(safe-area-inset-bottom, 0px));
 }
 
 </style>
