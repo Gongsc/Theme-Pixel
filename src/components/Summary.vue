@@ -7,6 +7,7 @@ import PixelChart from './PixelChart.vue'
 import PixelIcon from './PixelIcon.vue'
 import PixelGuardian from './PixelGuardian.vue'
 import PixelWelcome from './PixelWelcome.vue'
+import ExpiryReminder from './ExpiryReminder.vue'
 
 const props = defineProps<{ nodes: Node[], group: string | null }>()
 
@@ -72,6 +73,7 @@ const top = computed(() => axisTop(Math.max(0, ...history.value.map(p => Math.ma
         <span class="muted">累计 ↓{{ bytes(total.rx) }} ↑{{ bytes(total.tx) }}</span>
       </div>
     </div>
+    <ExpiryReminder :nodes="nodes" :group="group" />
     <PixelWelcome :nodes="nodes" />
   </section>
 </template>

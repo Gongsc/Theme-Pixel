@@ -87,6 +87,15 @@
       "default": true
     },
     {
+      "key": "expiryReminderDays",
+      "type": "number",
+      "label": "到期提醒天数",
+      "default": 7,
+      "min": 0,
+      "max": 365,
+      "help": "在顶部概览中提醒未来指定天数内（含当天）到期的节点，已到期节点单独折叠显示。默认 7 天，设为 0 关闭；关闭或当前分组没有符合条件的节点时不显示提醒区域。小数按向下取整处理"
+    },
+    {
       "key": "showPrice",
       "type": "boolean",
       "label": "显示价格",

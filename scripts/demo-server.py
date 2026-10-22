@@ -4,14 +4,15 @@ python3 scripts/demo-server.py  ->  http://127.0.0.1:9911/api/*  (PORT=... to ch
 """
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
+from datetime import date, timedelta
 import json, math, os, random, time
 
 G = 1024 ** 3
 NODES = [
     # name, country, group, online, expires_in
-    ('Tokyo · 东京主节点', 'JP', '亚太', True, 120),
+    ('Tokyo · 东京主节点', 'JP', '亚太', True, 2),
     ('Singapore · 新加坡', 'SG', '亚太', True, 5),
-    ('Hong Kong · 香港边缘', 'HK', '亚太', True, None),
+    ('Hong Kong · 香港边缘', 'HK', '亚太', True, 0),
     ('Frankfurt · 法兰克福', 'DE', '欧洲', True, 42),
     ('Los Angeles · 洛杉矶', 'US', '', True, -3),
     ('备用节点 · 等待连接', 'CN', '', False, None),
@@ -38,7 +39,8 @@ def node(i, name, country, group, online, expires):
                 disk_total=80 * G, agent_version='1.3.0', price=5 + i * 2.5,
                 # Hub 1.3.1+ cycles beyond the named six are `<n>m`; a pre-1.3.1 hub may hold any currency text.
                 currency=['USD', 'CNY', 'EUR', 'TWD', '人民币', 'USD'][i],
-                billing_cycle=['monthly', 'yearly', '60m', '18m', 'quarterly', 'once'][i], expires_at=None, expires_in=expires,
+                billing_cycle=['monthly', 'yearly', '60m', '18m', 'quarterly', 'once'][i],
+                expires_at=(date.today() + timedelta(days=expires)).isoformat() if expires is not None else None, expires_in=expires,
                 traffic_limit=(500 * G) if i % 2 == 0 else 0, traffic_mode='sum', traffic_reset_day=1,
                 total_rx=80 * G, total_tx=40 * G, month_rx=(20 + i * 30) * G, month_tx=(10 + i * 8) * G,
                 month_start='', day_rx=3 * G, day_tx=G,

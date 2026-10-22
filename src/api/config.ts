@@ -12,6 +12,7 @@ export type SiteConfig = {
   pixelFont: boolean
   notice: string
   showSummary: boolean
+  expiryReminderDays: number
   showPrice: boolean
   hidePriceForGuests: boolean
   hideOffline: boolean
