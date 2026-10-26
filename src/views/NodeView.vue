@@ -128,16 +128,31 @@ const procTop = computed(() => axisTop(Math.max(0, ...metrics.value.map(p => p.p
 const count = (v: number) => String(Math.round(v))
 
 const PING_COLORS = ['--green', '--blue', '--yellow', '--purple', '--red']
+/** Probe ids switched off in the legend; kept across reloads and window changes. */
+const hiddenProbes = ref(new Set<string>())
+function toggleProbe(id: string) {
+  const next = new Set(hiddenProbes.value)
+  if (!next.delete(id)) next.add(id)
+  hiddenProbes.value = next
+}
+/** Show this probe alone, or everything again when it already is. */
+function soloProbe(id: string) {
+  const all = pingChart.value.series.map(s => s.id)
+  const solo = all.every(x => x === id || hiddenProbes.value.has(x)) && !hiddenProbes.value.has(id)
+  hiddenProbes.value = new Set(solo ? [] : all.filter(x => x !== id))
+}
 /** Every probe on one shared time axis; a probe missing at a timestamp is a gap. */
 const pingChart = computed(() => {
   const probes = probeOrder(ping.value)
   const stamps = [...new Set(ping.value.ping.map(p => p.ts))].sort((a, b) => a - b)
   const index = new Map(stamps.map((t, i) => [t, i]))
+  // Colors follow the full probe list, so hiding one never recolors the rest.
   const series = probes.map(([id, name], i) => {
     const values: (number | null)[] = Array.from({ length: stamps.length }, () => null)
     for (const p of ping.value.ping) if (String(p.task_id) === id) values[index.get(p.ts)!] = p.latency
     const ok = values.filter((v): v is number => v !== null)
     return {
+      id,
       name,
       color: PING_COLORS[i % PING_COLORS.length]!,
       values,
@@ -145,10 +160,12 @@ const pingChart = computed(() => {
       loss: ping.value.loss?.[id] ?? 0,
     }
   })
+  const shown = series.filter(s => !hiddenProbes.value.has(s.id))
   const times = stamps.map(t => t * 1000)
-  const max = Math.max(0, ...series.flatMap(s => s.values.filter((v): v is number => v !== null)))
+  const max = Math.max(0, ...shown.flatMap(s => s.values.filter((v): v is number => v !== null)))
   return {
     series,
+    shown,
     times,
     top: axisTop(max, 50),
     ticks: times.length ? timeTicks(times[0]!, times.at(-1)!, 5) : [],
@@ -286,16 +303,30 @@ const facts = computed(() => {
           <PixelChart :times="times" :series="procSeries" :top="procTop" :format="count" :x-format="xFormat" :tick-format="tickFormat" :ticks="ticks" />
         </section>
         <section v-if="pingChart.series.length" class="box panel wide">
-          <h2 class="display">PING</h2>
+          <div class="ping-head">
+            <h2 class="display">PING</h2>
+            <button
+              v-if="pingChart.series.length > 1 && hiddenProbes.size" class="btn display all"
+              @click="hiddenProbes = new Set()"
+            >
+              ALL
+            </button>
+          </div>
           <ul class="legend">
-            <li v-for="s in pingChart.series" :key="s.name">
-              <i :style="{ background: `var(${s.color})` }" />
-              <span>{{ s.name }}</span>
-              <span class="muted num">{{ s.avg === null ? '—' : ms(s.avg) }} · 丢包 {{ s.loss > 0 && s.loss < 1 ? '<1' : Math.round(s.loss) }}%</span>
+            <li v-for="s in pingChart.series" :key="s.id">
+              <button
+                type="button" class="probe" :class="{ off: hiddenProbes.has(s.id) }"
+                :aria-pressed="!hiddenProbes.has(s.id)" title="单击显示/隐藏 · 双击只看此线路"
+                @click="toggleProbe(s.id)" @dblclick.prevent="soloProbe(s.id)"
+              >
+                <i :style="{ background: `var(${s.color})` }" />
+                <span>{{ s.name }}</span>
+                <span class="muted num">{{ s.avg === null ? '—' : ms(s.avg) }} · 丢包 {{ s.loss > 0 && s.loss < 1 ? '<1' : Math.round(s.loss) }}%</span>
+              </button>
             </li>
           </ul>
           <PixelChart
-            :times="pingChart.times" :series="pingChart.series" :top="pingChart.top" :format="ms"
+            :times="pingChart.times" :series="pingChart.shown" :top="pingChart.top" :format="ms"
             :x-format="xFormat" :tick-format="pingTickFormat" :ticks="pingChart.ticks" :fill="false" :height="200"
           />
         </section>
@@ -484,16 +515,57 @@ h2 {
   list-style: none;
 }
 
-.legend li {
+.ping-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.ping-head h2 {
+  margin: 0;
+}
+
+.ping-head .all {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.probe {
   display: flex;
   align-items: center;
   gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  user-select: none;
+}
+
+.probe:hover > span:first-of-type {
+  text-decoration: underline dashed;
+  text-underline-offset: 3px;
+}
+
+.probe.off {
+  opacity: 0.4;
+}
+
+.probe.off > span:first-of-type {
+  text-decoration: line-through;
 }
 
 .legend i {
   width: 10px;
   height: 10px;
   box-shadow: 0 0 0 2px var(--ink);
+}
+
+.probe.off i {
+  background: transparent !important;
 }
 
 .hint {
