@@ -149,13 +149,21 @@ const pingChart = computed(() => {
   // Colors follow the full probe list, so hiding one never recolors the rest.
   const series = probes.map(([id, name], i) => {
     const values: (number | null)[] = Array.from({ length: stamps.length }, () => null)
-    for (const p of ping.value.ping) if (String(p.task_id) === id) values[index.get(p.ts)!] = p.latency
+    const lossValues: (number | null)[] = Array.from({ length: stamps.length }, () => null)
+    for (const p of ping.value.ping) {
+      if (String(p.task_id) !== id) continue
+      values[index.get(p.ts)!] = p.latency
+      // Missing bucket loss is unknown, even when its mean latency is available.
+      lossValues[index.get(p.ts)!] = typeof p.loss === 'number' && Number.isFinite(p.loss)
+        ? Math.min(100, Math.max(0, p.loss)) : null
+    }
     const ok = values.filter((v): v is number => v !== null)
     return {
       id,
       name,
       color: PING_COLORS[i % PING_COLORS.length]!,
       values,
+      lossValues,
       avg: ok.length ? ok.reduce((a, b) => a + b, 0) / ok.length : null,
       loss: ping.value.loss?.[id] ?? 0,
     }
@@ -171,6 +179,11 @@ const pingChart = computed(() => {
     ticks: times.length ? timeTicks(times[0]!, times.at(-1)!, 5) : [],
   }
 })
+const lossSeries = computed(() => pingChart.value.shown.map(s => ({
+  name: s.name, color: s.color, values: s.lossValues,
+})))
+const hasLoss = computed(() => pingChart.value.series.some(s => s.lossValues.some(v => v !== null)))
+const lossPercent = (v: number) => `${Number(v.toFixed(2))}%`
 const pingTickFormat = computed(() => tickClock(pingChart.value.ticks, hours.value))
 const ms = (v: number) => `${Math.round(v)}ms`
 
@@ -329,6 +342,16 @@ const facts = computed(() => {
             :times="pingChart.times" :series="pingChart.shown" :top="pingChart.top" :format="ms"
             :x-format="xFormat" :tick-format="pingTickFormat" :ticks="pingChart.ticks" :fill="false" :height="200"
           />
+        </section>
+        <section v-if="pingChart.series.length" class="box panel wide">
+          <h2>丢包率</h2>
+          <p class="muted">与 PING 共用线路筛选 · 每个采样时段的丢包百分比</p>
+          <PixelChart
+            v-if="hasLoss"
+            :times="pingChart.times" :series="lossSeries" :top="100" :format="lossPercent"
+            :x-format="xFormat" :tick-format="pingTickFormat" :ticks="pingChart.ticks" :fill="false" :height="200"
+          />
+          <p v-else class="muted">暂无丢包率历史数据</p>
         </section>
       </div>
       <p v-if="!metrics.length && !loading" class="muted hint">该时间范围内没有历史数据（{{ fullClock(range.from) }} 起）</p>
