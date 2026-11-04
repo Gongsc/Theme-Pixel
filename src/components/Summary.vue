@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { speedHistory } from '@/api/nodes'
 import type { Node } from '@/api/types'
 import { axisTop, bytes, rate } from '@/lib/format'
@@ -12,7 +12,29 @@ import ExpiryReminder from './ExpiryReminder.vue'
 const props = defineProps<{ nodes: Node[], group: string | null }>()
 
 const online = computed(() => props.nodes.filter(n => n.online).length)
-const hearts = computed(() => [...props.nodes].sort((a, b) => Number(b.online) - Number(a.online)).slice(0, 12))
+const heartGrid = ref<HTMLElement>()
+const heartColumns = ref(8)
+let heartObserver: ResizeObserver | undefined
+onMounted(() => {
+  heartObserver = new ResizeObserver(([entry]) => {
+    if (entry) heartColumns.value = Math.max(1, Math.floor((entry.contentRect.width + 4) / 24))
+  })
+  if (heartGrid.value) heartObserver.observe(heartGrid.value)
+})
+onBeforeUnmount(() => heartObserver?.disconnect())
+// Three rows; reserve enough cells for the overflow count only when needed.
+const heartLayout = computed(() => {
+  const capacity = heartColumns.value * 3
+  if (props.nodes.length <= capacity) return { count: props.nodes.length, overflowColumns: 0 }
+  let columns = 1
+  while (columns < heartColumns.value) {
+    const remaining = props.nodes.length - (capacity - columns)
+    if (String(remaining).length * 9 + 9 <= columns * 24 - 4) break
+    columns++
+  }
+  return { count: capacity - columns, overflowColumns: columns }
+})
+const hearts = computed(() => [...props.nodes].sort((a, b) => Number(b.online) - Number(a.online)).slice(0, heartLayout.value.count))
 const speed = computed(() => props.nodes.reduce((t, n) => {
   if (n.online && n.metrics) { t.rx += n.metrics.net_rx; t.tx += n.metrics.net_tx }
   return t
@@ -42,12 +64,12 @@ const top = computed(() => axisTop(Math.max(0, ...history.value.map(p => Math.ma
         <span class="label muted">在线节点</span>
         <div class="party">
           <span class="big display num">{{ online }}<small>/{{ nodes.length }}</small></span>
-          <div class="hearts" aria-hidden="true" title="一颗爱心表示一台节点的在线状态">
+          <div ref="heartGrid" class="hearts" aria-hidden="true" title="一颗爱心表示一台节点的在线状态">
             <PixelIcon
               v-for="n in hearts" :key="n.id" :name="n.online ? 'heart' : 'heart-empty'"
               :size="20" :class="{ connected: n.online }"
             />
-            <span v-if="nodes.length > hearts.length" class="muted num">+{{ nodes.length - hearts.length }}</span>
+            <span v-if="nodes.length > hearts.length" class="muted num heart-overflow" :style="{ gridColumn: `span ${heartLayout.overflowColumns}` }">+{{ nodes.length - hearts.length }}</span>
           </div>
         </div>
         <span class="muted">{{ !nodes.length ? '等待节点加入' : nodes.length - online ? `${nodes.length - online} 台离线` : '全部在线' }}</span>
@@ -109,7 +131,7 @@ const top = computed(() => axisTop(Math.max(0, ...history.value.map(p => Math.ma
 
 @media (min-width: 720px) {
   .summary {
-    grid-template-columns: 1fr 1.4fr 1.2fr;
+    grid-template-columns: fit-content(32%) minmax(0, 1fr) fit-content(30%);
   }
 }
 
@@ -118,7 +140,7 @@ const top = computed(() => axisTop(Math.max(0, ...history.value.map(p => Math.ma
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-  padding: 18px 20px;
+  padding: 14px 20px;
 }
 
 .tile + .tile {
@@ -126,9 +148,9 @@ const top = computed(() => axisTop(Math.max(0, ...history.value.map(p => Math.ma
 }
 
 .big {
-  font-size: 32px;
-  line-height: 1;
-  margin: 4px 0;
+  font-size: 24px;
+  line-height: 1.2;
+  margin: 0;
 }
 
 .big small {
@@ -144,13 +166,17 @@ const top = computed(() => axisTop(Math.max(0, ...history.value.map(p => Math.ma
 }
 
 .hearts {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 20px);
+  grid-auto-rows: 20px;
   align-items: center;
   gap: 4px;
   color: var(--muted);
-  max-width: 170px;
+  width: 188px;
+  max-width: 100%;
 }
+
+.heart-overflow { white-space: nowrap; font-size: 14px; }
 
 .connected {
   color: var(--green);
@@ -169,6 +195,7 @@ const top = computed(() => axisTop(Math.max(0, ...history.value.map(p => Math.ma
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
 
 .rx {
@@ -206,9 +233,20 @@ const top = computed(() => axisTop(Math.max(0, ...history.value.map(p => Math.ma
     padding: 14px 12px;
   }
 
+  .big,
   .speed {
     font-size: 20px;
     gap: 4px 8px;
   }
+}
+@media (max-width: 420px) {
+  .summary { grid-template-columns: minmax(0, 1fr); }
+
+  .tile + .tile {
+    border-left: 0;
+    border-top: 2px solid var(--track);
+  }
+
+  .tile:first-child { border-bottom: 0; }
 }
 </style>

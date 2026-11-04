@@ -27,7 +27,7 @@ const badges = computed(() => milestones.map(milestone => ({
       <div
         v-for="badge in badges" :key="badge.id" class="milestone"
         :class="{ earned: badge.count > 0 }"
-        :title="`${badge.label}：${badge.count} 台在线节点本次启动的运行时长达到要求；系统重启后重新累计。`"
+        tabindex="0" :aria-describedby="`runtime-tip-${badge.id}`"
       >
         <svg class="medal" viewBox="4 4 16 18" shape-rendering="crispEdges" aria-hidden="true" focusable="false">
           <g v-if="badge.id === 'battery'">
@@ -48,6 +48,9 @@ const badges = computed(() => milestones.map(milestone => ({
         </svg>
         <span class="milestone-label">{{ badge.label }}</span>
         <span class="milestone-count num">{{ badge.count }} 台</span>
+        <span :id="`runtime-tip-${badge.id}`" class="runtime-tip" role="tooltip">
+          {{ badge.label }}：{{ badge.count }} 台在线节点本次启动的运行时长达到要求；系统重启后重新累计。
+        </span>
       </div>
     </div>
   </div>
@@ -55,6 +58,7 @@ const badges = computed(() => milestones.map(milestone => ({
 
 <style scoped>
 .runtime {
+  position: relative;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -80,6 +84,29 @@ const badges = computed(() => milestones.map(milestone => ({
   align-items: center;
   gap: 8px;
 }
+
+.runtime-tip {
+  display: none;
+  position: absolute;
+  z-index: 10;
+  left: 12px;
+  bottom: calc(100% - 2px);
+  width: max-content;
+  max-width: calc(100% - 24px);
+  padding: 8px 10px;
+  border: 2px solid var(--ink);
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: 3px 3px 0 var(--track);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.milestone:hover .runtime-tip,
+.milestone:focus .runtime-tip { display: block; }
+
+.milestone:focus-visible { outline: 2px dashed var(--ink); outline-offset: 4px; }
 
 .milestone.earned:nth-child(1) { --medal-color: var(--green); }
 .milestone.earned:nth-child(2) { --medal-color: var(--blue); }
