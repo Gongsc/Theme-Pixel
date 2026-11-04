@@ -138,7 +138,8 @@ const top = computed(() => axisTop(Math.max(0, ...history.value.map(p => Math.ma
 .tile {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  justify-content: center;
+  gap: 10px;
   min-width: 0;
   padding: 14px 20px;
 }
